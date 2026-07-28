@@ -1,6 +1,10 @@
 -- APP agendamento | Fluxo operacional v2
 -- Execute este arquivo uma unica vez no SQL Editor do Supabase.
 
+-- O trigger antigo depende do tipo da coluna status. Ele precisa ser removido
+-- durante a conversao e sera recriado ao final desta migracao.
+drop trigger if exists trg_historico_os on public.ordens_servico;
+
 -- Substitui o enum antigo preservando e convertendo registros existentes.
 alter table public.ordens_servico alter column status drop default;
 alter table public.ordens_servico alter column status type text using status::text;
@@ -22,6 +26,36 @@ alter table public.ordens_servico
   alter column status type public.status_os using status::public.status_os;
 alter table public.ordens_servico
   alter column status set default 'aguardando_retorno'::public.status_os;
+
+-- Recria o historico depois que o novo enum ja esta ativo.
+create or replace function public.registrar_historico_os()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare detalhes jsonb;
+begin
+  if tg_op='INSERT' then
+    detalhes=jsonb_build_object('status_novo',new.status,'tecnico_novo',new.tecnico_id);
+  else
+    detalhes=jsonb_strip_nulls(jsonb_build_object(
+      'status_anterior',old.status,
+      'status_novo',new.status,
+      'tecnico_anterior',old.tecnico_id,
+      'tecnico_novo',new.tecnico_id,
+      'data_hora_agendada',new.data_hora_agendada
+    ));
+  end if;
+  insert into public.historico_os(os_id,usuario_id,acao,detalhes)
+  values(new.id,auth.uid(),lower(tg_op),detalhes);
+  return new;
+end;
+$$;
+
+create trigger trg_historico_os
+after insert or update on public.ordens_servico
+for each row execute function public.registrar_historico_os();
 
 -- Datas separadas para conclusao do tecnico e finalizacao administrativa.
 alter table public.ordens_servico
