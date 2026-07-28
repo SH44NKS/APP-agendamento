@@ -1,8 +1,227 @@
 "use client";
-import {useEffect,useState} from "react";import {useRouter} from "next/navigation";import {createClient} from "@/lib/supabase/client";
-const vazio={tipo:"instalacao",prioridade:"padrao",cliente_nome:"",veiculo_modelo:"",veiculo_identificador:"",telefone:"",local:"",tecnico_id:"",consultor_nome:"",observacoes:""};
-export default function NovaOSPage(){const router=useRouter(),[tecnicos,setTecnicos]=useState<{id:string;nome:string}[]>([]),[form,setForm]=useState(vazio),[texto,setTexto]=useState(""),[enviando,setEnviando]=useState(false),[erro,setErro]=useState("");useEffect(()=>{createClient().from("profiles").select("id,nome").eq("papel","tecnico").eq("ativo",true).order("nome").then(({data})=>setTecnicos(data??[]))},[]);function update(campo:string,valor:string){setForm(f=>({...f,[campo]:valor}))}
-function importar(){const linhas=texto.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);const valor=(icone:string,label?:string)=>linhas.find(l=>l.startsWith(icone)||!!label&&l.toLowerCase().startsWith(label))?.replace(icone,"").replace(label??"","").replace(/^\s*[:\-]?\s*/,"").trim()??"";const servico=linhas.find(l=>/INSTALAÇÃO|INSTALACAO|RETIRADA|MANUTENÇÃO|MANUTENCAO/i.test(l));const veiculo=valor("🚗");const partes=veiculo.split(/\s+-\s+(?=[A-Z0-9]{6,}$)/i);setForm(f=>({...f,tipo:/RETIRADA/i.test(servico??"")?"retirada":/MANUTEN/i.test(servico??"")?"manutencao":"instalacao",cliente_nome:valor("👤")||f.cliente_nome,veiculo_modelo:partes.length>1?partes.slice(0,-1).join(" - "):veiculo||f.veiculo_modelo,veiculo_identificador:partes.length>1?partes.at(-1)??"":f.veiculo_identificador,telefone:valor("📱")||f.telefone,local:valor("📍")||f.local,consultor_nome:valor("🤝","consultor")||f.consultor_nome,tecnico_id:""}));setErro("")}
-async function salvar(){setErro("");if(!form.cliente_nome||!form.veiculo_modelo||!form.veiculo_identificador||!form.local||!form.consultor_nome||!form.tecnico_id){setErro("Preencha os campos obrigatórios e selecione um técnico.");return}setEnviando(true);const{data,error}=await createClient().from("ordens_servico").insert(form).select().single();setEnviando(false);if(error){setErro(error.message);return}router.push(`/os/${data.id}`)}
-return <main className="min-h-screen bg-base-bg px-4 py-8"><div className="mx-auto max-w-3xl"><button onClick={()=>router.back()} className="text-xs text-ink-muted">← Voltar</button><p className="eyebrow mt-5">LANÇAMENTO RÁPIDO</p><h1 className="mt-2 text-3xl font-bold">Nova ordem de serviço</h1><div className="mt-7 rounded-xl border border-amber/25 bg-amber/5 p-5"><label className="text-sm font-semibold">Cole a ordem recebida</label><p className="mt-1 text-xs text-ink-muted">Os dados serão preenchidos automaticamente; você escolhe o técnico depois.</p><textarea value={texto} onChange={e=>setTexto(e.target.value)} className="campo mt-3 min-h-40 font-mono text-xs" placeholder="📋 ORDEM DE SERVIÇO..."/><button type="button" onClick={importar} disabled={!texto.trim()} className="btn-secondary mt-3">Preencher formulário</button></div><div className="mt-5 grid gap-4 rounded-xl border border-base-border bg-base-surface p-5 sm:grid-cols-2"><Campo label="Serviço *"><select className="campo" value={form.tipo} onChange={e=>update("tipo",e.target.value)}><option value="instalacao">Instalação</option><option value="retirada">Retirada</option><option value="manutencao">Manutenção</option></select></Campo><Campo label="Prioridade *"><select className="campo" value={form.prioridade} onChange={e=>update("prioridade",e.target.value)}><option value="padrao">Padrão</option><option value="alta">Alta — mostrar no topo</option></select></Campo><Campo label="Cliente *"><input className="campo" value={form.cliente_nome} onChange={e=>update("cliente_nome",e.target.value)}/></Campo><Campo label="Telefone"><input className="campo" value={form.telefone} onChange={e=>update("telefone",e.target.value)}/></Campo><Campo label="Modelo do veículo *"><input className="campo" value={form.veiculo_modelo} onChange={e=>update("veiculo_modelo",e.target.value)}/></Campo><Campo label="Placa ou chassi *"><input className="campo font-mono" value={form.veiculo_identificador} onChange={e=>update("veiculo_identificador",e.target.value)}/></Campo><Campo label="Local *"><input className="campo" value={form.local} onChange={e=>update("local",e.target.value)}/></Campo><Campo label="Consultor *"><input className="campo" value={form.consultor_nome} onChange={e=>update("consultor_nome",e.target.value)}/></Campo><Campo label="Técnico responsável *"><select className="campo" value={form.tecnico_id} onChange={e=>update("tecnico_id",e.target.value)}><option value="">Selecione o técnico</option>{tecnicos.map(t=><option key={t.id} value={t.id}>{t.nome}</option>)}</select></Campo><Campo label="Observações"><input className="campo" value={form.observacoes} onChange={e=>update("observacoes",e.target.value)}/></Campo><div className="sm:col-span-2">{erro&&<p className="mb-3 rounded-lg bg-red-500/10 p-3 text-xs text-red-300">{erro}</p>}<button onClick={salvar} disabled={enviando} className="btn-primary w-full">{enviando?"Criando...":"Criar ordem de serviço"}</button></div></div></div></main>}
-function Campo({label,children}:{label:string;children:React.ReactNode}){return <label><span className="mb-1.5 block text-xs text-ink-muted">{label}</span>{children}</label>}
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { importarTextoOS } from "@/lib/importar-os";
+const vazio = {
+  tipo: "instalacao",
+  prioridade: "padrao",
+  cliente_nome: "",
+  veiculo_modelo: "",
+  veiculo_identificador: "",
+  telefone: "",
+  local: "",
+  tecnico_id: "",
+  consultor_nome: "",
+  observacoes: "",
+};
+export default function NovaOSPage() {
+  const router = useRouter(),
+    [tecnicos, setTecnicos] = useState<{ id: string; nome: string }[]>([]),
+    [form, setForm] = useState(vazio),
+    [texto, setTexto] = useState(""),
+    [enviando, setEnviando] = useState(false),
+    [erro, setErro] = useState("");
+  useEffect(() => {
+    createClient()
+      .from("profiles")
+      .select("id,nome")
+      .eq("papel", "tecnico")
+      .eq("ativo", true)
+      .order("nome")
+      .then(({ data }) => setTecnicos(data ?? []));
+  }, []);
+  function update(campo: string, valor: string) {
+    setForm((f) => ({ ...f, [campo]: valor }));
+  }
+  function importar() {
+    const dados = importarTextoOS(texto);
+    setForm((f) => ({
+      ...f,
+      ...dados,
+      cliente_nome:dados.cliente_nome||f.cliente_nome,
+      veiculo_modelo:dados.veiculo_modelo||f.veiculo_modelo,
+      veiculo_identificador:dados.veiculo_identificador||f.veiculo_identificador,
+      telefone:dados.telefone||f.telefone,
+      local:dados.local||f.local,
+      consultor_nome:dados.consultor_nome||f.consultor_nome,
+      tecnico_id: "",
+    }));
+    setErro("");
+  }
+  async function salvar() {
+    setErro("");
+    if (
+      !form.cliente_nome ||
+      !form.veiculo_modelo ||
+      !form.veiculo_identificador ||
+      !form.local ||
+      !form.consultor_nome ||
+      !form.tecnico_id
+    ) {
+      setErro("Preencha os campos obrigatórios e selecione um técnico.");
+      return;
+    }
+    setEnviando(true);
+    const { data, error } = await createClient()
+      .from("ordens_servico")
+      .insert(form)
+      .select()
+      .single();
+    setEnviando(false);
+    if (error) {
+      setErro(error.message);
+      return;
+    }
+    router.push(`/os/${data.id}`);
+  }
+  return (
+    <main className="min-h-screen bg-base-bg px-4 py-8">
+      <div className="mx-auto max-w-3xl">
+        <button
+          onClick={() => router.back()}
+          className="text-xs text-ink-muted"
+        >
+          ← Voltar
+        </button>
+        <p className="eyebrow mt-5">LANÇAMENTO RÁPIDO</p>
+        <h1 className="mt-2 text-3xl font-bold">Nova ordem de serviço</h1>
+        <div className="mt-7 rounded-xl border border-amber/25 bg-amber/5 p-5">
+          <label className="text-sm font-semibold">Cole a ordem recebida</label>
+          <p className="mt-1 text-xs text-ink-muted">
+            Os dados serão preenchidos automaticamente; você escolhe o técnico
+            depois.
+          </p>
+          <textarea
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            className="campo mt-3 min-h-40 font-mono text-xs"
+            placeholder="📋 ORDEM DE SERVIÇO..."
+          />
+          <button
+            type="button"
+            onClick={importar}
+            disabled={!texto.trim()}
+            className="btn-secondary mt-3"
+          >
+            Preencher formulário
+          </button>
+        </div>
+        <div className="mt-5 grid gap-4 rounded-xl border border-base-border bg-base-surface p-5 sm:grid-cols-2">
+          <Campo label="Serviço *">
+            <select
+              className="campo"
+              value={form.tipo}
+              onChange={(e) => update("tipo", e.target.value)}
+            >
+              <option value="instalacao">Instalação</option>
+              <option value="retirada">Retirada</option>
+              <option value="manutencao">Manutenção</option>
+            </select>
+          </Campo>
+          <Campo label="Prioridade *">
+            <select
+              className="campo"
+              value={form.prioridade}
+              onChange={(e) => update("prioridade", e.target.value)}
+            >
+              <option value="padrao">Padrão</option>
+              <option value="alta">Alta — mostrar no topo</option>
+            </select>
+          </Campo>
+          <Campo label="Cliente *">
+            <input
+              className="campo"
+              value={form.cliente_nome}
+              onChange={(e) => update("cliente_nome", e.target.value)}
+            />
+          </Campo>
+          <Campo label="Telefone">
+            <input
+              className="campo"
+              value={form.telefone}
+              onChange={(e) => update("telefone", e.target.value)}
+            />
+          </Campo>
+          <Campo label="Modelo do veículo *">
+            <input
+              className="campo"
+              value={form.veiculo_modelo}
+              onChange={(e) => update("veiculo_modelo", e.target.value)}
+            />
+          </Campo>
+          <Campo label="Placa ou chassi *">
+            <input
+              className="campo font-mono"
+              value={form.veiculo_identificador}
+              onChange={(e) => update("veiculo_identificador", e.target.value)}
+            />
+          </Campo>
+          <Campo label="Local *">
+            <input
+              className="campo"
+              value={form.local}
+              onChange={(e) => update("local", e.target.value)}
+            />
+          </Campo>
+          <Campo label="Consultor *">
+            <input
+              className="campo"
+              value={form.consultor_nome}
+              onChange={(e) => update("consultor_nome", e.target.value)}
+            />
+          </Campo>
+          <Campo label="Técnico responsável *">
+            <select
+              className="campo"
+              value={form.tecnico_id}
+              onChange={(e) => update("tecnico_id", e.target.value)}
+            >
+              <option value="">Selecione o técnico</option>
+              {tecnicos.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nome}
+                </option>
+              ))}
+            </select>
+          </Campo>
+          <Campo label="Observações">
+            <input
+              className="campo"
+              value={form.observacoes}
+              onChange={(e) => update("observacoes", e.target.value)}
+            />
+          </Campo>
+          <div className="sm:col-span-2">
+            {erro && (
+              <p className="mb-3 rounded-lg bg-red-500/10 p-3 text-xs text-red-300">
+                {erro}
+              </p>
+            )}
+            <button
+              onClick={salvar}
+              disabled={enviando}
+              className="btn-primary w-full"
+            >
+              {enviando ? "Criando..." : "Criar ordem de serviço"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+function Campo({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label>
+      <span className="mb-1.5 block text-xs text-ink-muted">{label}</span>
+      {children}
+    </label>
+  );
+}
