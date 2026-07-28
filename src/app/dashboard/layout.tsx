@@ -1,7 +1,30 @@
-"use client";
-import Link from "next/link";
-import {usePathname} from "next/navigation";
-import {BarChart3,ClipboardPlus,LayoutDashboard,LogOut,UsersRound} from "lucide-react";
-import {LogoutButton} from "@/components/LogoutButton";
-const items=[{href:"/dashboard",label:"Visão geral",icon:LayoutDashboard,exact:true},{href:"/dashboard/tecnicos",label:"Por técnico",icon:BarChart3},{href:"/dashboard/equipe",label:"Equipe",icon:UsersRound},{href:"/os/novo",label:"Nova OS",icon:ClipboardPlus}];
-export default function DashboardLayout({children}:{children:React.ReactNode}){const pathname=usePathname();return <div className="min-h-screen bg-base-bg lg:flex"><aside className="border-b border-base-border bg-white px-4 py-4 lg:sticky lg:top-0 lg:h-screen lg:w-[250px] lg:border-b-0 lg:border-r lg:px-4 lg:py-5"><div className="flex items-center justify-between lg:block"><Link href="/dashboard" className="flex items-center gap-3 px-1"><span className="brand-mark">FE</span><span><b className="block text-sm font-extrabold text-gray-900">APP agendamento</b><small className="font-mono text-[9px] uppercase tracking-[.16em] text-ink-muted">Foco & Escudo</small></span></Link><nav className="flex gap-1 lg:mt-9 lg:flex-col"><p className="mb-1 hidden px-3 font-mono text-[9px] uppercase tracking-[.18em] text-ink-muted lg:block">Operações</p>{items.map(({href,label,icon:Icon,exact})=>{const active=exact?pathname===href:pathname.startsWith(href);return <Link key={href} className={`nav-link ${active?"nav-link-active":""}`} href={href}><Icon size={16} strokeWidth={1.9}/><span className="hidden lg:inline">{label}</span></Link>})}<div className="mt-1 border-t border-base-border pt-2 lg:mt-4"><LogoutButton icon={<LogOut size={16} strokeWidth={1.9}/>} /></div></nav></div></aside><main className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-7 sm:px-7 lg:p-8 xl:p-10">{children}</main></div>}
+import { DashboardShell } from "@/components/DashboardShell";
+import { createClient } from "@/lib/supabase/server";
+import { isAdminUser } from "@/lib/auth";
+
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const s = createClient();
+  const {
+    data: { user },
+  } = await s.auth.getUser();
+  const { data: perfil } = await s
+    .from("profiles")
+    .select("nome,papel")
+    .eq("id", user?.id)
+    .maybeSingle();
+  const admin = isAdminUser(user?.email, perfil?.papel);
+  const nome =
+    perfil?.nome ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split("@")[0] ||
+    "Usuário";
+  return (
+    <DashboardShell nome={nome} papel={admin ? "admin" : "tecnico"}>
+      {children}
+    </DashboardShell>
+  );
+}
