@@ -165,6 +165,7 @@ export default async function DashboardPage({
             value={searchParams.status}
             label="Todos os status"
             items={[
+              ["pendente", "Pendente"],
               ["aguardando_retorno", "Aguardando retorno"],
               ["agendado", "Agendado"],
               ["reagendar", "Reagendar"],
