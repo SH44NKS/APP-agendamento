@@ -1,0 +1,2 @@
+import {createClient} from "@/lib/supabase/server";import {NextResponse} from "next/server";
+export async function GET(request:Request){await createClient().auth.signOut();const original=new URL(request.url),url=new URL("/login",request.url);if(original.searchParams.get("motivo")==="inatividade")url.searchParams.set("motivo","inatividade");const response=NextResponse.redirect(url);response.cookies.delete("last_activity");return response}

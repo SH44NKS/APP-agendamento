@@ -1,2 +1,2 @@
 import {createClient} from "@/lib/supabase/server";import {NextResponse} from "next/server";
-export async function GET(request:Request){const{searchParams,origin}=new URL(request.url),code=searchParams.get("code");if(code)await createClient().auth.exchangeCodeForSession(code);return NextResponse.redirect(`${origin}/dashboard`)}
+export async function GET(request:Request){const{searchParams,origin}=new URL(request.url),code=searchParams.get("code");if(code)await createClient().auth.exchangeCodeForSession(code);const response=NextResponse.redirect(`${origin}/dashboard`);response.cookies.set("last_activity",String(Date.now()),{httpOnly:true,sameSite:"lax",secure:origin.startsWith("https://"),path:"/",maxAge:30*24*60*60});return response}
