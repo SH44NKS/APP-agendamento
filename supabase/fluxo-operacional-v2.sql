@@ -1,9 +1,30 @@
 -- APP agendamento | Fluxo operacional v2
 -- Execute este arquivo uma unica vez no SQL Editor do Supabase.
 
--- O trigger antigo depende do tipo da coluna status. Ele precisa ser removido
--- durante a conversao e sera recriado ao final desta migracao.
+-- O trigger antigo depende do tipo da coluna status. Bancos criados por
+-- versoes diferentes podem ter nomes de trigger diferentes. Remove todos os
+-- triggers que chamam registrar_historico_os e depois remove a funcao antiga,
+-- evitando que o PostgreSQL reutilize um plano preparado com o tipo anterior.
+do $$
+declare item record;
+begin
+  for item in
+    select t.tgname
+    from pg_trigger t
+    join pg_proc p on p.oid=t.tgfoid
+    join pg_namespace n on n.oid=p.pronamespace
+    where t.tgrelid='public.ordens_servico'::regclass
+      and not t.tgisinternal
+      and n.nspname='public'
+      and p.proname='registrar_historico_os'
+  loop
+    execute format('drop trigger if exists %I on public.ordens_servico',item.tgname);
+  end loop;
+end;
+$$;
+
 drop trigger if exists trg_historico_os on public.ordens_servico;
+drop function if exists public.registrar_historico_os();
 
 -- Substitui o enum antigo preservando e convertendo registros existentes.
 alter table public.ordens_servico alter column status drop default;
