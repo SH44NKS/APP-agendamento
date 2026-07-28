@@ -9,6 +9,7 @@ import {
   ClipboardPlus,
   LayoutDashboard,
   LogOut,
+  ListChecks,
   ShieldCheck,
   UserRound,
   UsersRound,
@@ -23,8 +24,9 @@ const items = [
     exact: true,
   },
   { href: "/dashboard/tecnicos", label: "Por técnico", icon: BarChart3 },
-  { href: "/dashboard/equipe", label: "Equipe", icon: UsersRound },
-  { href: "/os/novo", label: "Nova OS", icon: ClipboardPlus },
+  { href: "/dashboard/finalizacao", label: "Finalização", icon: ListChecks, adminOnly:true },
+  { href: "/dashboard/equipe", label: "Equipe", icon: UsersRound, adminOnly:true },
+  { href: "/os/novo", label: "Nova OS", icon: ClipboardPlus, adminOnly:true },
 ];
 
 export function DashboardShell({
@@ -78,7 +80,7 @@ export function DashboardShell({
             >
               Operações
             </p>
-            {items.map(({ href, label, icon: Icon, exact }) => {
+            {items.filter(item=>papel==="admin"||!item.adminOnly).map(({ href, label, icon: Icon, exact }) => {
               const active = exact
                 ? pathname === href
                 : pathname.startsWith(href);

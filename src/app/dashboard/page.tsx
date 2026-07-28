@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { OSCard } from "@/components/OSCard";
 import { diasPendente, OrdemServico } from "@/lib/os";
 import { isAdminUser } from "@/lib/auth";
+import { BellRing } from "lucide-react";
 type Filtros = {
   busca?: string;
   status?: string;
@@ -20,6 +21,7 @@ export default async function DashboardPage({
     { data: ordens },
     { data: tecnicos },
     { data: config },
+    { data: alertas },
     {
       data: { user },
     },
@@ -35,6 +37,7 @@ export default async function DashboardPage({
       .eq("ativo", true)
       .order("nome"),
     s.from("configuracoes").select("*").single(),
+    s.from("observacoes_os").select("id,os_id,autor_id,texto,criado_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador)").is("visto_admin_em",null).order("criado_em",{ascending:false}),
     s.auth.getUser(),
   ]);
   const { data: perfil } = await s
@@ -43,6 +46,7 @@ export default async function DashboardPage({
     .eq("id", user?.id)
     .maybeSingle();
   if (!isAdminUser(user?.email, perfil?.papel)) return <AcessoTecnico />;
+  const chamados=(alertas??[]).filter((a:any)=>a.autor_id!==user?.id&&a.autor?.papel!=="admin");
   const amarelo = config?.alerta_amarelo_dias ?? 3,
     vermelho = config?.alerta_vermelho_dias ?? 7;
   const todas = (ordens ?? []) as OrdemServico[],
@@ -64,14 +68,14 @@ export default async function DashboardPage({
   const lista = [...filtradas].sort(
     (a, b) => Number(b.prioridade === "alta") - Number(a.prioridade === "alta"),
   );
-  const pendentes = todas.filter((o) => o.status === "pendente"),
+  const pendentes = todas.filter((o) => ["aguardando_retorno","pendente","reagendar"].includes(o.status)),
     agendadas = todas.filter((o) => o.status === "agendado"),
-    concluidas = todas.filter((o) => o.status === "concluido"),
+    concluidas = todas.filter((o) => o.status === "concluido_tecnico"),
     criticas = pendentes.filter((o) => diasPendente(o) >= vermelho),
     altas = todas.filter(
       (o) =>
         o.prioridade === "alta" &&
-        !["concluido", "cancelado"].includes(o.status),
+        !["finalizado", "concluido", "cancelado"].includes(o.status),
     );
   return (
     <div>
@@ -89,6 +93,7 @@ export default async function DashboardPage({
           + Nova ordem
         </Link>
       </div>
+      {chamados.length>0&&<section className="mt-7 rounded-xl border border-amber bg-amber/10 p-4"><div className="flex items-center gap-2"><BellRing size={18} className="text-amber-dark"/><h2 className="text-sm font-extrabold">{chamados.length} observação(ões) aguardando conferência</h2></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{chamados.slice(0,6).map((a:any)=><Link href={`/os/${a.os_id}`} key={a.id} className="rounded-lg border border-amber/40 bg-white p-3 text-xs hover:border-amber"><b className="block truncate">{a.os?.cliente_nome??"Ordem de serviço"} · {a.os?.veiculo_identificador??""}</b><span className="mt-1 block truncate text-ink-muted">{a.autor?.nome??"Técnico"}: {a.texto}</span></Link>)}</div></section>}
       <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Resumo
           label="Prioridade alta"
@@ -97,7 +102,7 @@ export default async function DashboardPage({
           alerta
         />
         <Resumo
-          label="Pendentes"
+          label="Aguardando/reagendar"
           valor={pendentes.length}
           detalhe="aguardando contato"
         />
@@ -160,10 +165,12 @@ export default async function DashboardPage({
             value={searchParams.status}
             label="Todos os status"
             items={[
-              ["pendente", "Pendente"],
+              ["aguardando_retorno", "Aguardando retorno"],
               ["agendado", "Agendado"],
+              ["reagendar", "Reagendar"],
               ["concluido", "Concluído"],
-              ["cancelado", "Cancelado"],
+              ["concluido_tecnico", "Concluído técnico"],
+              ["finalizado", "Finalizado"],
             ]}
           />
           <Filtro

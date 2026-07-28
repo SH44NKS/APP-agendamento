@@ -1,2 +1,31 @@
-import {createClient} from "@/lib/supabase/server";import {NextResponse} from "next/server";
-export async function POST(request:Request,{params}:{params:{id:string}}){const{data_hora}=await request.json();if(!data_hora||Number.isNaN(new Date(data_hora).getTime()))return NextResponse.json({error:"Data e hora inválidas"},{status:400});const s=createClient();const{data:{user}}=await s.auth.getUser();if(!user)return NextResponse.json({error:"Não autenticado"},{status:401});const{error}=await s.from("ordens_servico").update({data_hora_agendada:data_hora,status:"agendado",google_event_id:null}).eq("id",params.id);if(error)return NextResponse.json({error:error.message},{status:400});return NextResponse.json({ok:true})}
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const { data_hora } = await request.json();
+  if (!data_hora || Number.isNaN(new Date(data_hora).getTime()))
+    return NextResponse.json(
+      { error: "Data e hora inválidas" },
+      { status: 400 },
+    );
+  const s = createClient();
+  const {
+    data: { user },
+  } = await s.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  const { error } = await s
+    .from("ordens_servico")
+    .update({
+      data_hora_agendada: data_hora,
+      status: "agendado",
+      google_event_id: null,
+      concluido_tecnico_em: null,
+    })
+    .eq("id", params.id);
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ ok: true });
+}

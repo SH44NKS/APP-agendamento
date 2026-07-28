@@ -22,6 +22,10 @@ button,input,select,textarea{font:inherit}
 .status i{@apply h-1.5 w-1.5 rounded-full bg-ink-faint}
 .status-agendado{background:#fff8d6;color:#8a5b00;border-color:#f4c400}.status-agendado i{background:#d99a00}
 .status-concluido{background:#eefbf5;color:#057a4f;border-color:#b7ead2}.status-concluido i{background:#15a36d}
+.status-finalizado{background:#eefbf5;color:#057a4f;border-color:#b7ead2}.status-finalizado i{background:#15a36d}
+.status-concluido_tecnico{background:#eaf4ff;color:#175cd3;border-color:#b2ddff}.status-concluido_tecnico i{background:#2e90fa}
+.status-reagendar{background:#fff4e5;color:#b54708;border-color:#fedf89}.status-reagendar i{background:#f79009}
+.status-aguardando_retorno{background:#f2f4f7;color:#475467;border-color:#d0d5dd}.status-aguardando_retorno i{background:#667085}
 .status-atrasado{background:#fff8d6;color:#8a5b00;border-color:#f4c400}.status-atrasado i{background:#d99a00}
 .status-critico{background:#fff1f1;color:#b91c1c;border-color:#fecaca}.status-critico i{background:#dc2626}
 .filter-bar{@apply grid gap-3 rounded-xl border border-base-border bg-white p-4 sm:grid-cols-2 xl:grid-cols-6;box-shadow:var(--app-shadow)}
