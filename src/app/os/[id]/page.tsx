@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/StatusBadge";
 import { OSActions } from "@/components/OSActions";
-import { mensagemWhatsapp, OrdemServico, TIPO_LABEL, TipoServico } from "@/lib/os";
+import { linkGoogleAgenda, mensagemWhatsapp, OrdemServico, TIPO_LABEL, TipoServico } from "@/lib/os";
 
 export default async function OSDetalhePage({ params }: { params: { id: string } }) {
   const s = createClient();
@@ -26,7 +26,7 @@ export default async function OSDetalhePage({ params }: { params: { id: string }
         <dl className="space-y-4"><Linha label="Cliente" valor={os.cliente_nome}/><Linha label="Veículo" valor={`${os.veiculo_modelo} · ${os.veiculo_identificador}`}/><Linha label="Telefone" valor={os.telefone || "Não informado"}/><Linha label="Local" valor={os.local}/><Linha label="Técnico" valor={os.tecnico?.nome || "Não atribuído"}/><Linha label="Consultor" valor={os.consultor_nome}/>{os.observacoes && <Linha label="Observações" valor={os.observacoes}/>}</dl>
       </div>
       {historico && historico.length > 0 && <div className="mt-5 rounded-xl border border-base-border bg-base-surface p-5"><h2 className="section-title">Histórico</h2><div className="mt-4 space-y-3">{historico.map(h => <div key={h.id} className="border-l border-base-border pl-3 text-xs"><b>{acao(h.acao, h.detalhes)}</b><p className="mt-1 text-ink-faint">{h.usuario?.nome ?? "Sistema"} · {new Date(h.criado_em).toLocaleString("pt-BR")}</p></div>)}</div></div>}
-    </section><aside><OSActions osId={os.id} whatsappUrl={mensagemWhatsapp(os as OrdemServico, perfil?.nome ?? "")} dataAtual={os.data_hora_agendada} status={os.status} isAdmin={isAdmin} tecnicoId={os.tecnico_id} tecnicos={tecnicos ?? []}/></aside></div>
+    </section><aside><OSActions osId={os.id} whatsappUrl={mensagemWhatsapp(os as OrdemServico, perfil?.nome ?? "")} calendarUrl={linkGoogleAgenda(os as OrdemServico)} dataAtual={os.data_hora_agendada} status={os.status} isAdmin={isAdmin} tecnicoId={os.tecnico_id} tecnicos={tecnicos ?? []}/></aside></div>
   </div></main>;
 }
 function Linha({ label, valor }: { label: string; valor: string }) { return <div><dt className="text-[10px] uppercase tracking-wider text-ink-faint">{label}</dt><dd className="mt-1 text-sm">{valor}</dd></div>; }
