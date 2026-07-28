@@ -4,6 +4,7 @@ import { OSCard } from "@/components/OSCard";
 import { diasPendente, OrdemServico } from "@/lib/os";
 import { isAdminUser } from "@/lib/auth";
 import { BellRing } from "lucide-react";
+import { RefreshDashboardButton } from "@/components/RefreshDashboardButton";
 type Filtros = {
   busca?: string;
   status?: string;
@@ -89,9 +90,7 @@ export default async function DashboardPage({
             Acompanhe prioridades e mantenha a agenda em movimento.
           </p>
         </div>
-        <Link href="/os/novo" className="btn-primary">
-          + Nova ordem
-        </Link>
+        <div className="flex flex-wrap gap-2"><RefreshDashboardButton/><Link href="/os/novo" className="btn-primary">+ Nova ordem</Link></div>
       </div>
       {chamados.length>0&&<section className="mt-7 rounded-xl border border-amber bg-amber/10 p-4"><div className="flex items-center gap-2"><BellRing size={18} className="text-amber-dark"/><h2 className="text-sm font-extrabold">{chamados.length} observação(ões) aguardando conferência</h2></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{chamados.slice(0,6).map((a:any)=><Link href={`/os/${a.os_id}`} key={a.id} className="rounded-lg border border-amber/40 bg-white p-3 text-xs hover:border-amber"><b className="block truncate">{a.os?.cliente_nome??"Ordem de serviço"} · {a.os?.veiculo_identificador??""}</b><span className="mt-1 block truncate text-ink-muted">{a.autor?.nome??"Técnico"}: {a.texto}</span></Link>)}</div></section>}
       <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
