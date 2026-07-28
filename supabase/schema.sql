@@ -15,6 +15,13 @@ create table if not exists public.profiles (
   criado_em timestamptz not null default now()
 );
 
+-- Migração segura para bancos que já usavam a primeira versão do projeto.
+-- CREATE TABLE IF NOT EXISTS preserva a tabela antiga, mas não cria colunas novas.
+alter table public.profiles add column if not exists ativo boolean;
+update public.profiles set ativo = true where ativo is null;
+alter table public.profiles alter column ativo set default true;
+alter table public.profiles alter column ativo set not null;
+
 create table if not exists public.configuracoes (
   id boolean primary key default true check (id),
   alerta_amarelo_dias integer not null default 3 check (alerta_amarelo_dias >= 0),
@@ -44,6 +51,9 @@ create table if not exists public.ordens_servico (
   concluido_em timestamptz,
   cancelado_em timestamptz
 );
+alter table public.ordens_servico add column if not exists observacoes text;
+alter table public.ordens_servico add column if not exists criado_por uuid references public.profiles(id);
+alter table public.ordens_servico add column if not exists cancelado_em timestamptz;
 create index if not exists idx_os_tecnico on public.ordens_servico(tecnico_id);
 create index if not exists idx_os_status on public.ordens_servico(status);
 create index if not exists idx_os_criado on public.ordens_servico(criado_em desc);
@@ -81,6 +91,12 @@ alter table public.profiles enable row level security;
 alter table public.configuracoes enable row level security;
 alter table public.ordens_servico enable row level security;
 alter table public.historico_os enable row level security;
+-- Remove também as políticas da primeira versão para evitar duplicidade e
+-- recursão na leitura de profiles.
+drop policy if exists "usuario ve o proprio perfil ou admin ve todos" on public.profiles;
+drop policy if exists "tecnico ve suas OS, admin ve todas" on public.ordens_servico;
+drop policy if exists "tecnico atualiza suas OS, admin atualiza todas" on public.ordens_servico;
+drop policy if exists "somente admin cria OS" on public.ordens_servico;
 drop policy if exists "profiles_select" on public.profiles;
 create policy "profiles_select" on public.profiles for select using(id=auth.uid() or public.is_admin());
 drop policy if exists "profiles_admin_update" on public.profiles;
