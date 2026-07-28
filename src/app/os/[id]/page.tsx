@@ -21,7 +21,7 @@ export default async function OSDetalhePage({ params }: { params: { id: string }
     <Link href={isAdmin ? "/dashboard" : "/tecnico"} className="text-xs text-ink-muted hover:text-amber">← Voltar</Link>
     <div className="mt-4 grid gap-5 md:grid-cols-[1fr_310px]"><section>
       <div className="rounded-xl border border-base-border bg-base-surface p-6">
-        <div className="flex items-start justify-between"><div><p className="service-label">ORDEM DE SERVIÇO</p><h1 className="mt-2 text-2xl font-bold">{TIPO_LABEL[os.tipo as TipoServico]}</h1></div><StatusBadge status={os.status}/></div>
+        <div className="flex items-start justify-between"><div><p className="service-label">ORDEM DE SERVIÇO</p><h1 className="mt-2 text-2xl font-bold">{TIPO_LABEL[os.tipo as TipoServico]}</h1>{os.prioridade==="alta"&&<span className="mt-2 inline-flex rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-bold uppercase text-red-300">Prioridade alta</span>}</div><StatusBadge status={os.status}/></div>
         <div className="my-5 border-t border-dashed border-base-border"/>
         <dl className="space-y-4"><Linha label="Cliente" valor={os.cliente_nome}/><Linha label="Veículo" valor={`${os.veiculo_modelo} · ${os.veiculo_identificador}`}/><Linha label="Telefone" valor={os.telefone || "Não informado"}/><Linha label="Local" valor={os.local}/><Linha label="Técnico" valor={os.tecnico?.nome || "Não atribuído"}/><Linha label="Consultor" valor={os.consultor_nome}/>{os.observacoes && <Linha label="Observações" valor={os.observacoes}/>}</dl>
       </div>

@@ -3,7 +3,7 @@ import { differenceInCalendarDays } from "date-fns";
 export type TipoServico = "instalacao" | "retirada" | "manutencao";
 export type StatusOS = "pendente" | "agendado" | "concluido" | "cancelado";
 export type OrdemServico = {
-  id:string; tipo:TipoServico; status:StatusOS; cliente_nome:string; veiculo_modelo:string;
+  id:string; tipo:TipoServico; prioridade:"padrao"|"alta"; status:StatusOS; cliente_nome:string; veiculo_modelo:string;
   veiculo_identificador:string; telefone:string|null; local:string; consultor_nome:string;
   observacoes?:string|null; data_hora_agendada:string|null; criado_em:string; concluido_em?:string|null;
   tecnico_id?:string|null; tecnico?:{nome:string}|null;

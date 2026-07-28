@@ -23,6 +23,14 @@ alter table public.ordens_servico
 alter table public.ordens_servico
   add column if not exists cancelado_em timestamptz;
 
+do $$ begin create type prioridade_os as enum ('padrao','alta'); exception when duplicate_object then null; end $$;
+alter table public.ordens_servico
+  add column if not exists prioridade prioridade_os not null default 'padrao';
+
+update public.profiles
+set papel = 'admin', ativo = true
+where lower(email) = 'alissons.silva25@gmail.com';
+
 -- Confirma visualmente que a coluna foi criada antes do schema principal.
 select column_name, data_type, is_nullable, column_default
 from information_schema.columns

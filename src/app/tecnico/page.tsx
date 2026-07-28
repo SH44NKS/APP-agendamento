@@ -14,7 +14,9 @@ export default async function TecnicoPage() {
     .order("criado_em", { ascending: false });
 
   const lista = ordens ?? [];
-  const emAberto = lista.filter((os) => os.status !== "concluido" && os.status !== "cancelado");
+  const emAberto = lista
+    .filter((os) => os.status !== "concluido" && os.status !== "cancelado")
+    .sort((a, b) => Number(b.prioridade === "alta") - Number(a.prioridade === "alta"));
   const concluidas = lista.filter((os) => os.status === "concluido");
 
   return (

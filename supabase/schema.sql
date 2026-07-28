@@ -4,6 +4,7 @@ create extension if not exists pgcrypto;
 do $$ begin create type tipo_servico as enum ('instalacao','retirada','manutencao'); exception when duplicate_object then null; end $$;
 do $$ begin create type status_os as enum ('pendente','agendado','concluido','cancelado'); exception when duplicate_object then null; end $$;
 do $$ begin create type papel_usuario as enum ('admin','tecnico'); exception when duplicate_object then null; end $$;
+do $$ begin create type prioridade_os as enum ('padrao','alta'); exception when duplicate_object then null; end $$;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -34,6 +35,7 @@ insert into public.configuracoes(id) values(true) on conflict do nothing;
 create table if not exists public.ordens_servico (
   id uuid primary key default gen_random_uuid(),
   tipo tipo_servico not null,
+  prioridade prioridade_os not null default 'padrao',
   status status_os not null default 'pendente',
   cliente_nome text not null,
   veiculo_modelo text not null,
@@ -52,6 +54,7 @@ create table if not exists public.ordens_servico (
   cancelado_em timestamptz
 );
 alter table public.ordens_servico add column if not exists observacoes text;
+alter table public.ordens_servico add column if not exists prioridade prioridade_os not null default 'padrao';
 alter table public.ordens_servico add column if not exists criado_por uuid references public.profiles(id);
 alter table public.ordens_servico add column if not exists cancelado_em timestamptz;
 create index if not exists idx_os_tecnico on public.ordens_servico(tecnico_id);
@@ -115,7 +118,18 @@ drop policy if exists "historico_select" on public.historico_os;
 create policy "historico_select" on public.historico_os for select using(public.is_admin() or exists(select 1 from public.ordens_servico o where o.id=os_id and o.tecnico_id=auth.uid()));
 
 create or replace function public.handle_new_user() returns trigger language plpgsql security definer set search_path=public as $$
-begin insert into public.profiles(id,nome,email) values(new.id,coalesce(new.raw_user_meta_data->>'full_name',new.email),new.email) on conflict(id) do update set nome=excluded.nome,email=excluded.email; return new; end $$;
+begin
+  insert into public.profiles(id,nome,email,papel)
+  values(
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name',new.email),
+    new.email,
+    case when lower(new.email)='alissons.silva25@gmail.com' then 'admin'::papel_usuario else 'tecnico'::papel_usuario end
+  )
+  on conflict(id) do update set nome=excluded.nome,email=excluded.email,
+    papel=case when lower(excluded.email)='alissons.silva25@gmail.com' then 'admin'::papel_usuario else public.profiles.papel end;
+  return new;
+end $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert or update on auth.users for each row execute function public.handle_new_user();
 
@@ -124,3 +138,6 @@ create or replace function public.salvar_google_refresh_token(token text) return
   update public.profiles set google_refresh_token=token where id=auth.uid();
 $$;
 grant execute on function public.salvar_google_refresh_token(text) to authenticated;
+
+-- Garante o administrador mestre mesmo quando a conta já existia antes desta versão.
+update public.profiles set papel='admin', ativo=true where lower(email)='alissons.silva25@gmail.com';
