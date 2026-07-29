@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { importarTextoOS } from "@/lib/importar-os";
+import { STATUS_LABEL } from "@/lib/os";
+import { AlertTriangle, ExternalLink } from "lucide-react";
 const vazio = {
   tipo: "instalacao",
   prioridade: "padrao",
@@ -21,7 +23,13 @@ export default function NovaOSPage() {
     [form, setForm] = useState(vazio),
     [texto, setTexto] = useState(""),
     [enviando, setEnviando] = useState(false),
-    [erro, setErro] = useState("");
+    [erro, setErro] = useState(""),
+    [duplicada, setDuplicada] = useState<{
+      id: string;
+      status: string;
+      cliente_nome: string;
+      veiculo_identificador: string;
+    } | null>(null);
   useEffect(() => {
     createClient()
       .from("profiles")
@@ -33,6 +41,7 @@ export default function NovaOSPage() {
   }, []);
   function update(campo: string, valor: string) {
     setForm((f) => ({ ...f, [campo]: valor }));
+    if (campo === "veiculo_identificador") setDuplicada(null);
   }
   function importar() {
     const dados = importarTextoOS(texto);
@@ -48,7 +57,10 @@ export default function NovaOSPage() {
       tecnico_id: "",
     }));
     setErro("");
+    setDuplicada(null);
   }
+  const normalizarIdentificador = (valor: string) =>
+    valor.toUpperCase().replace(/[^A-Z0-9]/g, "");
   async function salvar() {
     setErro("");
     if (
@@ -63,7 +75,26 @@ export default function NovaOSPage() {
       return;
     }
     setEnviando(true);
-    const { data, error } = await createClient()
+    const supabase = createClient();
+    const identificador = normalizarIdentificador(form.veiculo_identificador);
+    const { data: abertas, error: erroConsulta } = await supabase
+      .from("ordens_servico")
+      .select("id,status,cliente_nome,veiculo_identificador")
+      .not("status", "in", "(finalizado,concluido)");
+    if (erroConsulta) {
+      setEnviando(false);
+      setErro(erroConsulta.message);
+      return;
+    }
+    const existente = abertas?.find(
+      (os) => normalizarIdentificador(os.veiculo_identificador) === identificador,
+    );
+    if (existente) {
+      setEnviando(false);
+      setDuplicada(existente);
+      return;
+    }
+    const { data, error } = await supabase
       .from("ordens_servico")
       .insert(form)
       .select()
@@ -193,6 +224,22 @@ export default function NovaOSPage() {
             />
           </Campo>
           <div className="sm:col-span-2">
+            {duplicada && (
+              <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={19} className="mt-0.5 shrink-0 text-amber-dark" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold">Esta OS já existe no sistema</p>
+                    <p className="mt-1 text-xs">
+                      {duplicada.cliente_nome} · {duplicada.veiculo_identificador} · Status: <b>{STATUS_LABEL[duplicada.status] ?? duplicada.status}</b>
+                    </p>
+                    <button type="button" onClick={() => router.push(`/os/${duplicada.id}`)} className="btn-secondary mt-3 border-amber-300 bg-white">
+                      <ExternalLink size={15} /> Ver OS existente
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {erro && (
               <p className="mb-3 rounded-lg bg-red-500/10 p-3 text-xs text-red-300">
                 {erro}
