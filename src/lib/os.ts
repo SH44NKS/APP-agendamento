@@ -29,6 +29,28 @@ export type OrdemServico = {
   finalizado_em?: string | null;
   tecnico_id?: string | null;
   tecnico?: { nome: string } | null;
+  motivo_ocorrencia?: MotivoOcorrencia | null;
+  detalhe_ocorrencia?: string | null;
+  ocorrencia_em?: string | null;
+};
+
+export type MotivoOcorrencia =
+  | "cliente_ausente"
+  | "veiculo_indisponivel"
+  | "endereco_incorreto"
+  | "falta_equipamento"
+  | "cliente_solicitou"
+  | "problema_tecnico"
+  | "outro";
+
+export const MOTIVO_LABEL: Record<MotivoOcorrencia, string> = {
+  cliente_ausente: "Cliente ausente",
+  veiculo_indisponivel: "Veículo indisponível",
+  endereco_incorreto: "Endereço incorreto",
+  falta_equipamento: "Falta de equipamento",
+  cliente_solicitou: "Cliente solicitou",
+  problema_tecnico: "Problema técnico",
+  outro: "Outro motivo",
 };
 
 export const TIPO_LABEL: Record<TipoServico, string> = {

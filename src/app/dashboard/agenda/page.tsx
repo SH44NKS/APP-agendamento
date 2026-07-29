@@ -1,0 +1,5 @@
+import { AgendaOperacional } from "@/components/AgendaOperacional";
+import { isAdminUser } from "@/lib/auth";
+import { OrdemServico } from "@/lib/os";
+import { createClient } from "@/lib/supabase/server";
+export default async function AgendaPage() { const s = createClient(); const { data: auth } = await s.auth.getUser(); const { data: perfil } = await s.from("profiles").select("papel").eq("id", auth.user?.id).maybeSingle(); const admin = isAdminUser(auth.user?.email, perfil?.papel); let query = s.from("ordens_servico").select("*,tecnico:tecnico_id(nome)").not("data_hora_agendada", "is", null).neq("status", "cancelado").order("data_hora_agendada"); if (!admin) query = query.eq("tecnico_id", auth.user?.id); const { data: ordens } = await query; return <div><p className="eyebrow">PLANEJAMENTO</p><h1 className="mt-2 text-3xl font-bold">Agenda operacional</h1><p className="mt-2 text-sm text-ink-muted">{admin ? "Visualize a equipe e identifique horários sobrepostos." : "Seus serviços organizados por data e horário."}</p><AgendaOperacional ordens={(ordens ?? []) as OrdemServico[]} tecnico={!admin}/></div>; }

@@ -4,12 +4,14 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BarChart3,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   ClipboardPlus,
   LayoutDashboard,
   LogOut,
   ListChecks,
+  Siren,
   ShieldCheck,
   UserRound,
   UsersRound,
@@ -24,6 +26,8 @@ const items = [
     exact: true,
   },
   { href: "/dashboard/tecnicos", label: "Por técnico", icon: BarChart3 },
+  { href: "/dashboard/pendencias", label: "Pendências", icon: Siren, adminOnly:true },
+  { href: "/dashboard/agenda", label: "Agenda", icon: CalendarDays },
   { href: "/dashboard/finalizacao", label: "Finalização", icon: ListChecks, adminOnly:true },
   { href: "/dashboard/equipe", label: "Equipe", icon: UsersRound, adminOnly:true },
   { href: "/os/novo", label: "Nova OS", icon: ClipboardPlus, adminOnly:true },
