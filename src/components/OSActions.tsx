@@ -6,11 +6,13 @@ import {
   CheckCircle2,
   MessageCircle,
   RotateCcw,
+  Send,
 } from "lucide-react";
 
 type Props = {
   osId: string;
   whatsappUrl: string;
+  setorWhatsappUrl: string;
   calendarUrl: string | null;
   dataAtual: string | null;
   status: string;
@@ -19,6 +21,7 @@ type Props = {
 export function OSActions({
   osId,
   whatsappUrl,
+  setorWhatsappUrl,
   calendarUrl,
   dataAtual,
   status,
@@ -65,6 +68,17 @@ export function OSActions({
         <MessageCircle size={16} />
         Abrir conversa no WhatsApp
       </button>
+      {!isAdmin && status === "agendado" && (
+        <a
+          href={setorWhatsappUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-secondary w-full border-green-300 bg-green-50 text-green-800 hover:bg-green-100"
+        >
+          <Send size={16} />
+          Enviar para lançamento no app
+        </a>
+      )}
       {podeAgendar && (
         <div className="rounded-xl border border-base-border bg-white p-4">
           <label className="text-xs text-ink-muted">

@@ -81,6 +81,20 @@ export function mensagemWhatsapp(os: OrdemServico, nomeTecnico: string) {
   const texto = `Olá, ${primeiroNome}! Tudo bem?\nMe chamo ${nomeTecnico}, sou técnico da Foco Proteção e da Escudo Clube.\nEstou entrando em contato para agendarmos ${TIPO_LABEL[os.tipo].toLowerCase()} do rastreador, conforme previsto em contrato, no veículo ${os.veiculo_modelo}, placa ${os.veiculo_identificador}.`;
   return `https://wa.me/${telefoneWhatsapp(os.telefone)}?text=${encodeURIComponent(texto)}`;
 }
+
+export function mensagemWhatsappSetor(
+  os: OrdemServico,
+  nomeTecnico: string,
+) {
+  const texto = `Lançar no app
+Serviço: ${TIPO_LABEL[os.tipo]}
+Cliente: ${os.cliente_nome}
+Placa/Chassi: ${os.veiculo_identificador}
+Modelo: ${os.veiculo_modelo}
+Técnico: ${nomeTecnico}`;
+
+  return `https://wa.me/557183975149?text=${encodeURIComponent(texto)}`;
+}
 export function cartaoOS(os: OrdemServico, nomeTecnico: string) {
   return `━━━━━━━━━━━━━━━━━━━━━━━━\n📋 ORDEM DE SERVIÇO\n━━━━━━━━━━━━━━━━━━━━━━━━\n${TIPO_ICONE[os.tipo]} ${TIPO_LABEL[os.tipo].toUpperCase()}\n👤 ${os.cliente_nome}\n🚗 ${os.veiculo_modelo} - ${os.veiculo_identificador}\n📱 ${os.telefone ?? "Não informado"}\n📍 ${os.local}\n👷 Técnico: ${nomeTecnico}\n🤝 Consultor: ${os.consultor_nome}\n━━━━━━━━━━━━━━━━━━━━━━━━`;
 }
