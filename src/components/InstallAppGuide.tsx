@@ -9,17 +9,17 @@ export function InstallAppGuide(){
   useEffect(()=>{
     if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
     const standalone=window.matchMedia("(display-mode: standalone)").matches||Boolean((navigator as Navigator&{standalone?:boolean}).standalone);
-    setInstalled(standalone);
+    setInstalled(standalone||localStorage.getItem("app_installed")==="1");
     const before=(event:Event)=>{event.preventDefault();setPrompt(event as InstallPrompt)};
-    const done=()=>{setInstalled(true);setOpen(false);setPrompt(null)};
+    const done=()=>{localStorage.setItem("app_installed","1");setInstalled(true);setOpen(false);setPrompt(null)};
     window.addEventListener("beforeinstallprompt",before);
     window.addEventListener("appinstalled",done);
     return()=>{window.removeEventListener("beforeinstallprompt",before);window.removeEventListener("appinstalled",done)};
   },[]);
-  async function instalar(){if(!prompt)return;await prompt.prompt();const escolha=await prompt.userChoice;if(escolha.outcome==="accepted")setInstalled(true);setPrompt(null)}
+  async function instalar(){if(!prompt){setOpen(true);return}await prompt.prompt();const escolha=await prompt.userChoice;if(escolha.outcome==="accepted"){localStorage.setItem("app_installed","1");setInstalled(true);setOpen(false)}setPrompt(null)}
   if(installed)return null;
   return <>
-    <button onClick={()=>setOpen(true)} className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full border border-amber bg-gray-900 px-4 py-3 text-xs font-bold text-white shadow-xl transition hover:-translate-y-0.5" aria-label="Ver como instalar o aplicativo"><Download size={16} className="text-amber"/>Instalar app</button>
+    <button onClick={instalar} className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full border border-amber bg-gray-900 px-4 py-3 text-xs font-bold text-white shadow-xl transition hover:-translate-y-0.5" aria-label="Instalar aplicativo"><Download size={16} className="text-amber"/>Instalar app</button>
     {open&&<div className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-3 backdrop-blur-sm sm:items-center" role="dialog" aria-modal="true" aria-labelledby="install-title" onMouseDown={e=>e.target===e.currentTarget&&setOpen(false)}><section className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-base-border bg-white p-5 shadow-2xl sm:p-7"><header className="flex items-start justify-between gap-4"><div><p className="eyebrow">ACESSO RÁPIDO</p><h2 id="install-title" className="mt-2 text-2xl font-extrabold">Instale como aplicativo</h2><p className="mt-2 text-sm leading-6 text-ink-muted">O APP agendamento ficará na tela inicial e abrirá em uma janela própria, como um aplicativo comum.</p></div><button onClick={()=>setOpen(false)} className="rounded-lg border border-base-border p-2 text-ink-muted hover:bg-base-surface2" aria-label="Fechar"><X size={18}/></button></header>
       {prompt&&<button onClick={instalar} className="btn-primary mt-5 w-full"><Download size={17}/>Instalar agora neste dispositivo</button>}
       <div className="mt-6 grid gap-3">
