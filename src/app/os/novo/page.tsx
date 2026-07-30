@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { importarTextoOS } from "@/lib/importar-os";
 import { STATUS_LABEL } from "@/lib/os";
-import { AlertTriangle, ExternalLink } from "lucide-react";
+import { AlertTriangle, ExternalLink, FileUp } from "lucide-react";
+import { extrairTextoPDF } from "@/lib/extrair-pdf";
 const vazio = {
   tipo: "instalacao",
   prioridade: "padrao",
@@ -22,6 +23,8 @@ export default function NovaOSPage() {
     [tecnicos, setTecnicos] = useState<{ id: string; nome: string }[]>([]),
     [form, setForm] = useState(vazio),
     [texto, setTexto] = useState(""),
+    [pdfNome, setPdfNome] = useState(""),
+    [lendoPdf, setLendoPdf] = useState(false),
     [enviando, setEnviando] = useState(false),
     [erro, setErro] = useState(""),
     [duplicada, setDuplicada] = useState<{
@@ -43,8 +46,8 @@ export default function NovaOSPage() {
     setForm((f) => ({ ...f, [campo]: valor }));
     if (campo === "veiculo_identificador") setDuplicada(null);
   }
-  function importar() {
-    const dados = importarTextoOS(texto);
+  function preencher(textoExtraido: string) {
+    const dados = importarTextoOS(textoExtraido);
     setForm((f) => ({
       ...f,
       ...dados,
@@ -58,6 +61,29 @@ export default function NovaOSPage() {
     }));
     setErro("");
     setDuplicada(null);
+  }
+  function importar() {
+    preencher(texto);
+  }
+  async function importarPDF(arquivo?: File) {
+    if (!arquivo) return;
+    setErro("");
+    setDuplicada(null);
+    setPdfNome(arquivo.name);
+    setLendoPdf(true);
+    try {
+      const extraido = await extrairTextoPDF(arquivo);
+      if (!extraido.trim())
+        throw new Error(
+          "Não encontramos texto neste PDF. Ele pode ser uma imagem escaneada e precisar de OCR.",
+        );
+      setTexto(extraido);
+      preencher(extraido);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível ler o PDF.");
+    } finally {
+      setLendoPdf(false);
+    }
   }
   const normalizarIdentificador = (valor: string) =>
     valor.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -117,7 +143,24 @@ export default function NovaOSPage() {
         </button>
         <p className="eyebrow mt-5">LANÇAMENTO RÁPIDO</p>
         <h1 className="mt-2 text-3xl font-bold">Nova ordem de serviço</h1>
-        <div className="mt-7 rounded-xl border border-amber/25 bg-amber/5 p-5">
+        <div className="mt-7 rounded-xl border border-base-border bg-white p-5">
+          <div className="flex items-start gap-3">
+            <FileUp size={20} className="mt-0.5 text-amber-dark" />
+            <div>
+              <h2 className="text-sm font-bold">Importar OS pelo PDF</h2>
+              <p className="mt-1 text-xs text-ink-muted">
+                Selecione o PDF gerado pelo outro sistema. Confira os dados extraídos antes de criar a OS.
+              </p>
+            </div>
+          </div>
+          <label className="btn-secondary mt-4 inline-flex cursor-pointer">
+            <FileUp size={16} />
+            {lendoPdf ? "Lendo PDF..." : "Selecionar PDF"}
+            <input type="file" accept="application/pdf,.pdf" disabled={lendoPdf} className="sr-only" onChange={(e) => importarPDF(e.target.files?.[0])} />
+          </label>
+          {pdfNome && <p className="mt-2 text-xs text-ink-muted">Arquivo: {pdfNome}</p>}
+        </div>
+        <div className="mt-5 rounded-xl border border-amber/25 bg-amber/5 p-5">
           <label className="text-sm font-semibold">Cole a ordem recebida</label>
           <p className="mt-1 text-xs text-ink-muted">
             Os dados serão preenchidos automaticamente; você escolhe o técnico
