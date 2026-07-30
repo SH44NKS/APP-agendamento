@@ -12,7 +12,14 @@ export async function extrairTextoPDF(arquivo: File) {
       if (!("str" in item)) continue;
       texto += `${item.str}${item.hasEOL ? "\n" : " "}`;
     }
-    paginas.push(texto.replace(/[ \t]+\n/g, "\n").trim());
+    const textoPagina = texto.replace(/[ \t]+\n/g, "\n").trim();
+    paginas.push(textoPagina);
+    if (
+      numero === 1 &&
+      /TERMO DE ADESÃO/i.test(textoPagina) &&
+      /DADOS DO VEÍCULO/i.test(textoPagina)
+    )
+      return textoPagina;
   }
   return paginas.join("\n\n").trim();
 }
