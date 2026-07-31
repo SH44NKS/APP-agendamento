@@ -16,13 +16,13 @@ export function OSCard({
   return (
     <Link
       href={`/os/${os.id}`}
-      className={`os-card group ${os.prioridade === "alta" ? "border-red-300" : ""}`}
+      className={`os-card group ${os.prioridade === "alta" ? "border-red-400 bg-red-50/80 shadow-[0_10px_30px_rgba(220,38,38,.10)] hover:border-red-500" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="service-label">{TIPO_LABEL[os.tipo]}</span>
           {os.prioridade === "alta" && (
-            <span className="rounded-md border border-red-200 bg-red-50 px-2 py-1 font-mono text-[9px] font-bold uppercase text-red-700">
+            <span className="rounded-md border border-red-600 bg-red-600 px-2 py-1 font-mono text-[9px] font-bold uppercase text-white">
               Prioridade alta
             </span>
           )}
