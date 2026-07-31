@@ -58,7 +58,7 @@ export function DashboardShell({
   return (
     <div className="min-h-screen bg-base-bg lg:flex">
       <aside
-        className={`flex border-b border-base-border bg-white px-3 py-3 transition-[width] duration-200 lg:sticky lg:top-0 lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:py-5 ${collapsed ? "lg:w-[76px]" : "lg:w-[250px]"}`}
+        className={`flex flex-col border-b border-base-border bg-white px-3 py-3 transition-[width] duration-200 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r lg:py-5 ${collapsed ? "lg:w-[76px]" : "lg:w-[250px]"}`}
       >
         <div className="flex min-w-0 flex-1 items-center justify-between lg:block">
           <div
@@ -103,6 +103,24 @@ export function DashboardShell({
               );
             })}
           </nav>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-base-border pt-3 lg:hidden">
+          <div className="flex min-w-0 items-center gap-2">
+            {papel === "admin" ? (
+              <ShieldCheck size={17} className="shrink-0 text-amber-dark" />
+            ) : (
+              <UserRound size={17} className="shrink-0 text-amber-dark" />
+            )}
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold text-gray-900">{nome}</p>
+              <p className="font-mono text-[8px] uppercase tracking-wider text-ink-muted">
+                {papel === "admin" ? "Administrador" : "Técnico"}
+              </p>
+            </div>
+          </div>
+          <div className="w-20 shrink-0">
+            <LogoutButton icon={<LogOut size={16} strokeWidth={1.9} />} />
+          </div>
         </div>
         <div className="hidden border-t border-base-border pt-3 lg:block">
           <div
