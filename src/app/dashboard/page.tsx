@@ -5,6 +5,7 @@ import { diasPendente, OrdemServico } from "@/lib/os";
 import { isAdminUser } from "@/lib/auth";
 import { BellRing } from "lucide-react";
 import { RefreshDashboardButton } from "@/components/RefreshDashboardButton";
+import { redirect } from "next/navigation";
 type Filtros = {
   busca?: string;
   status?: string;
@@ -46,7 +47,7 @@ export default async function DashboardPage({
     .select("papel,nome")
     .eq("id", user?.id)
     .maybeSingle();
-  if (!isAdminUser(user?.email, perfil?.papel)) return <AcessoTecnico />;
+  if (!isAdminUser(user?.email, perfil?.papel)) redirect("/tecnico");
   const chamados=(alertas??[]).filter((a:any)=>a.autor_id!==user?.id&&a.autor?.papel!=="admin");
   const amarelo = config?.alerta_amarelo_dias ?? 3,
     vermelho = config?.alerta_vermelho_dias ?? 7;
@@ -290,15 +291,5 @@ function Filtro({
         </option>
       ))}
     </select>
-  );
-}
-function AcessoTecnico() {
-  return (
-    <div className="empty-state">
-      <p>Esta é a área da gestão.</p>
-      <Link className="btn-primary mt-4 inline-flex" href="/tecnico">
-        Abrir meus serviços
-      </Link>
-    </div>
   );
 }
