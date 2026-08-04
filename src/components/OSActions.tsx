@@ -32,7 +32,7 @@ export function OSActions({
   isAdmin,
 }: Props) {
   const router = useRouter();
-  const [data, setData] = useState(dataAtual ? dataAtual.slice(0, 16) : "");
+  const [data, setData] = useState(dataAtual ? dataAtual.slice(0, 10) : "");
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
   const [motivo, setMotivo] = useState<MotivoOcorrencia | "">("");
@@ -85,8 +85,8 @@ export function OSActions({
       )}
       {podeAgendar && (
         <div className="rounded-xl border border-base-border bg-white p-4">
-          <label className="text-xs text-ink-muted">Data e hora combinadas</label>
-          <input type="datetime-local" value={data} onChange={(e) => setData(e.target.value)} className="campo mt-2" />
+          <label className="text-xs text-ink-muted">Data combinada</label>
+          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className="campo mt-2" />
           <button type="button" onClick={() => post("agendar", { data_hora: data })} disabled={busy || !data} className="btn-secondary mt-3 w-full">
             <CalendarPlus size={16} /> {status === "agendado" ? "Alterar agendamento" : "Confirmar agendamento"}
           </button>

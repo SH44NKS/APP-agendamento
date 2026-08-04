@@ -8,6 +8,7 @@ export async function POST(req:Request,{params}:{params:{id:string}}){
   const{s,user,admin}=await adminClient();if(!user)return NextResponse.json({error:"Não autenticado"},{status:401});if(!admin)return NextResponse.json({error:"Sem permissão"},{status:403});
   const body=await req.json();const permitidos=["tipo","prioridade","status","cliente_nome","veiculo_modelo","veiculo_identificador","telefone","local","tecnico_id","consultor_nome","observacoes","data_hora_agendada"];
   const update:Record<string,unknown>={};for(const campo of permitidos)if(campo in body)update[campo]=body[campo]||null;
+  if(typeof body.data_hora_agendada==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(body.data_hora_agendada)){update.data_hora_agendada=`${body.data_hora_agendada}T12:00:00-03:00`}
   if(body.status==="finalizado"){update.finalizado_em=new Date().toISOString();update.concluido_em=new Date().toISOString()}
   if(body.status==="reagendar"){update.data_hora_agendada=null;update.concluido_tecnico_em=null}
   const{error}=await s.from("ordens_servico").update(update).eq("id",params.id);if(error)return NextResponse.json({error:error.message},{status:400});return NextResponse.json({ok:true});

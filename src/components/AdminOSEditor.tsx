@@ -17,7 +17,7 @@ export function AdminOSEditor({
     [erro, setErro] = useState("");
   const [form, setForm] = useState({
     ...os,
-    data_hora_agendada: os.data_hora_agendada?.slice(0, 16) ?? "",
+    data_hora_agendada: os.data_hora_agendada?.slice(0, 10) ?? "",
   });
   function set(campo: string, valor: string) {
     setForm((f) => ({ ...f, [campo]: valor }));
@@ -197,7 +197,7 @@ export function AdminOSEditor({
         </Campo>
         <Campo label="Data agendada">
           <input
-            type="datetime-local"
+            type="date"
             className="campo"
             value={form.data_hora_agendada ?? ""}
             onChange={(e) => set("data_hora_agendada", e.target.value)}

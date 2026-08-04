@@ -122,13 +122,11 @@ export function cartaoOS(os: OrdemServico, nomeTecnico: string) {
 }
 export function linkGoogleAgenda(os: OrdemServico) {
   if (!os.data_hora_agendada) return null;
-  const inicio = new Date(os.data_hora_agendada),
-    fim = new Date(inicio.getTime() + 60 * 60 * 1000);
-  const formato = (d: Date) =>
-    d
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(/\.\d{3}/, "");
+  const inicio = new Date(os.data_hora_agendada);
+  const fim = new Date(inicio);
+  fim.setDate(fim.getDate() + 1);
+  const formato = (data: Date) =>
+    `${data.getFullYear()}${String(data.getMonth() + 1).padStart(2, "0")}${String(data.getDate()).padStart(2, "0")}`;
   const p = new URLSearchParams({
     action: "TEMPLATE",
     text: `${TIPO_LABEL[os.tipo]} — ${os.cliente_nome}`,
