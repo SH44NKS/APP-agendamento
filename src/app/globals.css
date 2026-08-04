@@ -11,14 +11,18 @@ button,input,select,textarea{font:inherit}
 
 .campo{@apply w-full rounded-lg border border-base-border bg-white px-3 py-2.5 text-sm text-ink outline-none transition placeholder:text-ink-faint focus:border-amber focus:ring-4 focus:ring-amber/15}
 .btn-primary{@apply inline-flex items-center justify-center gap-2 rounded-lg border border-amber bg-amber px-4 py-2.5 text-sm font-bold text-gray-900 transition hover:bg-amber-light disabled:opacity-40}
-.btn-secondary{@apply inline-flex items-center justify-center gap-2 rounded-lg border border-base-border bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 transition hover:border-amber hover:bg-amber/5 disabled:opacity-40}
+.btn-secondary{@apply inline-flex items-center justify-center gap-2 rounded-lg border border-base-border bg-white px-4 py-2.5 text-center text-sm font-semibold leading-5 text-gray-900 transition hover:border-amber hover:bg-amber/5 disabled:opacity-40}
+.btn-primary>svg,.btn-secondary>svg,.nav-link>svg{flex-shrink:0}
 .eyebrow{@apply font-mono text-[10px] font-bold tracking-[.2em] text-amber-dark}
 .section-title{@apply text-sm font-extrabold uppercase tracking-[.08em] text-gray-900}
 .stat-card{@apply rounded-[10px] border border-base-border bg-white p-5;box-shadow:var(--app-shadow)}
 .card-grid{@apply grid gap-4 sm:grid-cols-2 xl:grid-cols-3}
 .os-card{@apply block rounded-xl border border-base-border bg-white p-5 transition hover:-translate-y-0.5 hover:border-amber;box-shadow:var(--app-shadow)}
-.service-label{@apply font-mono text-[11px] font-bold uppercase tracking-[.1em] text-amber-dark}
-.status{@apply inline-flex items-center gap-1.5 rounded-md border border-base-border bg-base-surface2 px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wide text-ink-muted}
+.service-label{@apply inline-flex whitespace-nowrap rounded-md border px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[.08em]}
+.service-instalacao{@apply border-emerald-200 bg-emerald-50 text-emerald-700}
+.service-manutencao{@apply border-amber bg-yellow-50 text-amber-dark}
+.service-retirada{@apply border-red-200 bg-red-50 text-red-700}
+.status{@apply inline-flex whitespace-nowrap items-center gap-1.5 rounded-md border border-base-border bg-base-surface2 px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-wide text-ink-muted}
 .status i{@apply h-1.5 w-1.5 rounded-full bg-ink-faint}
 .status-agendado{background:#fff8d6;color:#8a5b00;border-color:#f4c400}.status-agendado i{background:#d99a00}
 .status-concluido{background:#eefbf5;color:#057a4f;border-color:#b7ead2}.status-concluido i{background:#15a36d}
@@ -35,3 +39,5 @@ button,input,select,textarea{font:inherit}
 .nav-link-active{@apply border-amber bg-amber/15 text-gray-900}
 .table-shell{@apply overflow-x-auto rounded-xl border border-base-border bg-white;box-shadow:var(--app-shadow)}
 .icon-box{@apply flex h-9 w-9 items-center justify-center rounded-lg bg-amber/15 text-amber-dark}
+.mobile-nav-scroll{scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mobile-nav-scroll::-webkit-scrollbar{display:none}
