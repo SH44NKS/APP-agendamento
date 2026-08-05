@@ -2,6 +2,7 @@ import { differenceInHours } from "date-fns";
 import { CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
+import { chaveMesBahia, FUSO_SISTEMA } from "@/lib/datetime";
 
 type Tecnico = { id: string; nome: string; email: string; ativo: boolean };
 type Ordem = {
@@ -155,8 +156,7 @@ function Linha({ tecnico, ordens }: { tecnico: Tecnico; ordens: Ordem[] }) {
   );
 }
 function chaveMes(data: string) {
-  const d = new Date(data);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return chaveMesBahia(data);
 }
 function mesesPresentes(ordens: Ordem[]) {
   return [...new Set(ordens.map((o) => chaveMes(o.criado_em)))].sort((a, b) =>
@@ -168,8 +168,8 @@ function nomeMes(chave: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     month: "long",
     year: "numeric",
-    timeZone: "America/Bahia",
-  }).format(new Date(ano, mes - 1, 1));
+    timeZone: FUSO_SISTEMA,
+  }).format(new Date(`${ano}-${String(mes).padStart(2, "0")}-15T12:00:00-03:00`));
 }
 function media(valores: number[]) {
   if (!valores.length) return "—";

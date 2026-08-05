@@ -3,6 +3,7 @@ import { BellRing, CalendarClock, ClipboardCheck, MessageCircleOff, TimerReset }
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { diasPendente, MOTIVO_LABEL, OrdemServico, TIPO_LABEL } from "@/lib/os";
+import { dataCalendarioBahia } from "@/lib/datetime";
 
 type Alerta = { id: string; os_id: string; texto: string; autor?: { nome: string } | null; os?: { cliente_nome: string; veiculo_identificador: string } | null };
 
@@ -16,11 +17,10 @@ export default async function PendenciasPage() {
   const { data: perfil } = await s.from("profiles").select("papel").eq("id", auth.user?.id).maybeSingle();
   if (!isAdminUser(auth.user?.email, perfil?.papel)) return <div className="empty-state">Acesso exclusivo da administração.</div>;
   const lista = (ordens ?? []) as OrdemServico[];
-  const inicioHoje = new Date(); inicioHoje.setHours(0, 0, 0, 0);
-  const fimHoje = new Date(inicioHoje); fimHoje.setDate(fimHoje.getDate() + 1);
+  const hojeBahia = dataCalendarioBahia(new Date());
   const semContato = lista.filter((o) => o.status === "pendente");
   const aguardando = lista.filter((o) => o.status === "aguardando_retorno" && diasPendente(o) >= 3);
-  const hoje = lista.filter((o) => o.status === "agendado" && o.data_hora_agendada && new Date(o.data_hora_agendada) >= inicioHoje && new Date(o.data_hora_agendada) < fimHoje);
+  const hoje = lista.filter((o) => o.status === "agendado" && o.data_hora_agendada && dataCalendarioBahia(o.data_hora_agendada) === hojeBahia);
   const concluir = lista.filter((o) => o.status === "concluido_tecnico");
   const motivos = Object.entries(MOTIVO_LABEL).map(([id, label]) => ({ id, label, total: lista.filter((o) => o.motivo_ocorrencia === id).length })).filter((item) => item.total > 0).sort((a, b) => b.total - a.total);
   return <div><p className="eyebrow">CENTRAL OPERACIONAL</p><h1 className="mt-2 text-3xl font-bold">Central de pendências</h1><p className="mt-2 text-sm text-ink-muted">Tudo que precisa de atenção reunido em uma única tela.</p><div className="mt-7 grid gap-5 xl:grid-cols-2">

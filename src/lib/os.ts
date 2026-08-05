@@ -1,4 +1,4 @@
-import { differenceInCalendarDays } from "date-fns";
+import { diferencaDiasBahia } from "@/lib/datetime";
 
 export type TipoServico = "instalacao" | "retirada" | "manutencao";
 export type StatusOS =
@@ -77,10 +77,7 @@ export const STATUS_LABEL: Record<string, string> = {
 };
 
 export function diasPendente(os: OrdemServico) {
-  return Math.max(
-    0,
-    differenceInCalendarDays(new Date(), new Date(os.criado_em)),
-  );
+  return Math.max(0, diferencaDiasBahia(os.criado_em));
 }
 export function statusVisual(os: OrdemServico, amarelo = 3, vermelho = 7) {
   if (!["aguardando_retorno", "pendente", "reagendar"].includes(os.status))
