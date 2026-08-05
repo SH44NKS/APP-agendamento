@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BellRing, Siren } from "lucide-react";
+import { BellRing, ListFilter, Siren } from "lucide-react";
 import { redirect } from "next/navigation";
 import { OSCard } from "@/components/OSCard";
 import { RefreshDashboardButton } from "@/components/RefreshDashboardButton";
@@ -72,6 +72,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   const vermelho = config?.alerta_vermelho_dias ?? 7;
   const todas = (ordens ?? []) as OrdemServico[];
   const termo = (searchParams.busca ?? "").toLocaleLowerCase("pt-BR");
+  const statusSelecionado = searchParams.status ?? "pendente";
+  const tipoSelecionado = searchParams.tipo ?? "todos";
 
   const filtradas = todas.filter(
     (ordem) =>
@@ -82,8 +84,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           ordem.veiculo_identificador,
           ordem.local,
         ].some((valor) => valor.toLocaleLowerCase("pt-BR").includes(termo))) &&
-      (!searchParams.status || ordem.status === searchParams.status) &&
-      (!searchParams.tipo || ordem.tipo === searchParams.tipo) &&
+      (statusSelecionado === "todos" ||
+        ordem.status === statusSelecionado ||
+        (statusSelecionado === "finalizado" && ordem.status === "concluido")) &&
+      (tipoSelecionado === "todos" || ordem.tipo === tipoSelecionado) &&
       (!searchParams.tecnico || ordem.tecnico_id === searchParams.tecnico) &&
       (!searchParams.prioridade || ordem.prioridade === searchParams.prioridade),
   );
@@ -104,6 +108,27 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   const ordensRegulares = lista.filter(
     (ordem) => ordem.prioridade !== "alta" || STATUS_ENCERRADOS.includes(ordem.status),
   );
+  const baseDoTipo = todas.filter(
+    (ordem) =>
+      statusSelecionado === "todos" ||
+      ordem.status === statusSelecionado ||
+      (statusSelecionado === "finalizado" && ordem.status === "concluido"),
+  );
+  const atalhosStatus = [
+    ["pendente", "Pendentes", todas.filter((ordem) => ordem.status === "pendente").length],
+    ["aguardando_retorno", "Aguardando retorno", todas.filter((ordem) => ordem.status === "aguardando_retorno").length],
+    ["agendado", "Agendadas", todas.filter((ordem) => ordem.status === "agendado").length],
+    ["reagendar", "Reagendar", todas.filter((ordem) => ordem.status === "reagendar").length],
+    ["concluido_tecnico", "Concluídas pelo técnico", todas.filter((ordem) => ordem.status === "concluido_tecnico").length],
+    ["finalizado", "Finalizadas", todas.filter((ordem) => ["finalizado", "concluido"].includes(ordem.status)).length],
+    ["todos", "Todas", todas.length],
+  ] as const;
+  const atalhosTipo = [
+    ["todos", "Todos os serviços", baseDoTipo.length],
+    ["instalacao", "Instalações", baseDoTipo.filter((ordem) => ordem.tipo === "instalacao").length],
+    ["manutencao", "Manutenções", baseDoTipo.filter((ordem) => ordem.tipo === "manutencao").length],
+    ["retirada", "Retiradas", baseDoTipo.filter((ordem) => ordem.tipo === "retirada").length],
+  ] as const;
 
   return (
     <div>
@@ -160,6 +185,46 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
         <Resumo label="Críticas" valor={criticas.length} detalhe={`há ${vermelho}+ dias`} alerta />
       </section>
 
+      <section className="mt-7 rounded-xl border border-base-border bg-white p-4 shadow-[0_10px_30px_rgba(17,24,39,.06)]">
+        <div className="flex items-center gap-2">
+          <ListFilter size={17} className="shrink-0 text-amber-dark" />
+          <div>
+            <h2 className="text-sm font-extrabold">Acesso rápido</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">Clique para trocar a lista exibida.</p>
+          </div>
+        </div>
+        <div className="mt-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-faint">Por status</p>
+          <div className="mobile-nav-scroll flex gap-2 overflow-x-auto pb-1">
+            {atalhosStatus.map(([id, label, total]) => (
+              <Link
+                key={id}
+                href={hrefRapido(id, tipoSelecionado)}
+                className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${statusSelecionado === id ? "border-amber bg-amber/15 text-gray-900" : "border-base-border bg-white text-ink-muted hover:border-amber"}`}
+              >
+                {label}
+                <span className="rounded-full bg-base-surface2 px-2 py-0.5 font-mono text-[9px] font-bold text-ink-muted">{total}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 border-t border-base-border pt-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-faint">Por serviço</p>
+          <div className="mobile-nav-scroll flex gap-2 overflow-x-auto pb-1">
+            {atalhosTipo.map(([id, label, total]) => (
+              <Link
+                key={id}
+                href={hrefRapido(statusSelecionado, id)}
+                className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${tipoSelecionado === id ? classeTipoAtivo(id) : "border-base-border bg-white text-ink-muted hover:border-amber"}`}
+              >
+                {label}
+                <span className="rounded-full bg-white/70 px-2 py-0.5 font-mono text-[9px] font-bold">{total}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {altasFiltradas.length > 0 && (
         <BlocoPrioridade
           lista={altasFiltradas}
@@ -190,7 +255,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           />
           <Filtro
             name="status"
-            value={searchParams.status}
+            value={statusSelecionado}
+            allValue="todos"
             label="Todos os status"
             items={[
               ["pendente", "Pendente"],
@@ -204,7 +270,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           />
           <Filtro
             name="tipo"
-            value={searchParams.tipo}
+            value={tipoSelecionado}
+            allValue="todos"
             label="Todos os serviços"
             items={[
               ["instalacao", "Instalação"],
@@ -324,15 +391,17 @@ function Filtro({
   value,
   label,
   items,
+  allValue = "",
 }: {
   name: string;
   value?: string;
   label: string;
   items: string[][];
+  allValue?: string;
 }) {
   return (
     <select name={name} defaultValue={value ?? ""} className="campo">
-      <option value="">{label}</option>
+      <option value={allValue}>{label}</option>
       {items.map(([itemValue, itemLabel]) => (
         <option key={itemValue} value={itemValue}>
           {itemLabel}
@@ -340,4 +409,16 @@ function Filtro({
       ))}
     </select>
   );
+}
+
+function hrefRapido(status: string, tipo: string) {
+  const params = new URLSearchParams({ status, tipo });
+  return `/dashboard?${params.toString()}`;
+}
+
+function classeTipoAtivo(tipo: string) {
+  if (tipo === "instalacao") return "border-emerald-300 bg-emerald-50 text-emerald-700";
+  if (tipo === "manutencao") return "border-amber bg-yellow-50 text-amber-dark";
+  if (tipo === "retirada") return "border-red-300 bg-red-50 text-red-700";
+  return "border-amber bg-amber/15 text-gray-900";
 }
