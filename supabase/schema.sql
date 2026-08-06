@@ -126,7 +126,9 @@ begin
     new.email,
     case when lower(new.email)='alissons.silva25@gmail.com' then 'admin'::papel_usuario else 'tecnico'::papel_usuario end
   )
-  on conflict(id) do update set nome=excluded.nome,email=excluded.email,
+  -- O nome do Google serve apenas para o primeiro cadastro. Em logins futuros,
+  -- preservamos o nome que a administração definiu no perfil.
+  on conflict(id) do update set email=excluded.email,
     papel=case when lower(excluded.email)='alissons.silva25@gmail.com' then 'admin'::papel_usuario else public.profiles.papel end;
   return new;
 end $$;
