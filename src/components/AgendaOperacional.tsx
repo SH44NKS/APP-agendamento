@@ -16,6 +16,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { OrdemServico, STATUS_LABEL, TIPO_LABEL } from "@/lib/os";
+import { SERVICO_VISUAL } from "./ServicoDestaque";
 
 type Visao = "dia" | "semana" | "mes";
 
@@ -74,7 +75,7 @@ export function AgendaOperacional({
 
   return (
     <div>
-      <div className="mt-6 grid gap-2 rounded-xl border border-base-border bg-white p-3 sm:grid-cols-[1fr_190px]">
+      <div className="grid gap-2 rounded-xl border border-base-border bg-white p-3 sm:grid-cols-[1fr_190px]">
         <div className="relative">
           <Search
             size={15}
@@ -211,28 +212,42 @@ function ItemAgenda({
   os: OrdemServico;
   tecnico: boolean;
 }) {
+  const visual = SERVICO_VISUAL[os.tipo];
+  const Icone = visual.Icone;
   return (
     <Link
       href={`/os/${os.id}`}
-      className="block rounded-lg border border-base-border p-3 text-xs hover:border-amber"
+      className={`relative block overflow-hidden rounded-xl border p-3 text-xs transition hover:-translate-y-0.5 hover:shadow-sm ${visual.card}`}
     >
-      <b className="break-words">
-        {os.data_hora_agendada
-          ? format(new Date(os.data_hora_agendada), "dd/MM/yyyy")
-          : "Sem data"} · {os.cliente_nome}
-      </b>
-      <span className={`service-label service-${os.tipo} mt-2`}>
-        {TIPO_LABEL[os.tipo]}
-      </span>
-      <span className="mt-2 block break-words leading-5 text-ink-muted">
-        {os.veiculo_modelo} · {os.veiculo_identificador}
-      </span>
-      <span className="mt-1 block text-ink-muted">
-        {STATUS_LABEL[os.status] ?? os.status}
-      </span>
-      {!tecnico && (
-        <span className="mt-1 block font-medium">{os.tecnico?.nome ?? "Sem técnico"}</span>
-      )}
+      <Icone
+        size={58}
+        strokeWidth={1.5}
+        aria-hidden="true"
+        className={`pointer-events-none absolute -right-1 -top-1 opacity-[.08] ${visual.marca}`}
+      />
+      <div className="relative z-10">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <b className="break-words">
+            {os.data_hora_agendada
+              ? format(new Date(os.data_hora_agendada), "dd/MM/yyyy")
+              : "Sem data"} · {os.cliente_nome}
+          </b>
+          <span className={`service-label service-${os.tipo}`}>
+            {TIPO_LABEL[os.tipo]}
+          </span>
+        </div>
+        <span className="mt-2 block break-words leading-5 text-ink-muted">
+          {os.veiculo_modelo} · {os.veiculo_identificador}
+        </span>
+        <span className="mt-1 block text-ink-muted">
+          {STATUS_LABEL[os.status] ?? os.status}
+        </span>
+        {!tecnico && (
+          <span className="mt-1 block font-medium">
+            {os.tecnico?.nome ?? "Sem técnico"}
+          </span>
+        )}
+      </div>
     </Link>
   );
 }

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { CalendarDays, LogOut, Search, Siren } from "lucide-react";
+import { CalendarDays, ClipboardList, LogOut, Search, Siren } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { OSCard } from "@/components/OSCard";
+import { PainelDestaque } from "@/components/PainelDestaque";
 import { OrdemServico, STATUS_LABEL } from "@/lib/os";
 import { createClient } from "@/lib/supabase/server";
 
@@ -106,31 +107,35 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
         <p className="mt-4 text-xs text-ink-muted">{lista.length} resultado(s)</p>
 
         {prioritarias.length > 0 && (
-          <section className="mt-4 rounded-2xl border border-red-300 bg-red-100/60 p-3 shadow-[0_12px_35px_rgba(220,38,38,.08)]">
-            <div className="mb-3 flex items-start justify-between gap-2 text-red-700">
-              <div className="flex items-center gap-2">
-                <Siren size={17} className="shrink-0" />
-                <h2 className="text-sm font-extrabold uppercase tracking-wide">Prioridade alta</h2>
-              </div>
-              <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                {prioritarias.length}
-              </span>
-            </div>
+          <PainelDestaque
+            Icone={Siren}
+            titulo="Prioridade alta"
+            descricao="Atenda estes serviços primeiro"
+            contador={prioritarias.length}
+            tema="vermelho"
+            className="mt-4"
+            conteudoClassName="p-3"
+          >
             <div className="flex flex-col gap-3">
               {prioritarias.map((ordem) => <OSCard key={ordem.id} os={ordem} />)}
             </div>
-          </section>
+          </PainelDestaque>
         )}
 
         {demais.length > 0 && (
-          <section className="mt-6">
-            <h2 className="mb-3 text-sm font-bold text-ink-muted">
-              {prioritarias.length > 0 ? "Demais ordens de serviço" : "Ordens de serviço"}
-            </h2>
+          <PainelDestaque
+            Icone={ClipboardList}
+            titulo={prioritarias.length > 0 ? "Demais ordens" : "Ordens de serviço"}
+            descricao="Serviços organizados do mais novo para o mais antigo"
+            contador={demais.length}
+            tema="neutro"
+            className="mt-6"
+            conteudoClassName="p-3"
+          >
             <div className="flex flex-col gap-3">
               {demais.map((ordem) => <OSCard key={ordem.id} os={ordem} />)}
             </div>
-          </section>
+          </PainelDestaque>
         )}
 
         {lista.length === 0 && (

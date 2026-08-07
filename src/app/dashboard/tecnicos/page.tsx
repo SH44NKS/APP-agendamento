@@ -1,5 +1,6 @@
 import { differenceInHours } from "date-fns";
 import { CalendarDays } from "lucide-react";
+import { PainelDestaque } from "@/components/PainelDestaque";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { chaveMesBahia, FUSO_SISTEMA } from "@/lib/datetime";
@@ -67,23 +68,16 @@ export default async function TecnicosPage() {
             ? tecnicos.filter((t) => idsComMovimento.has(t.id))
             : tecnicos;
           return (
-            <section
+            <PainelDestaque
               key={mes}
-              className="overflow-hidden rounded-xl border border-base-border bg-white shadow-[0_10px_30px_rgba(17,24,39,.06)]"
+              Icone={CalendarDays}
+              titulo={nomeMes(mes)}
+              descricao="Desempenho e movimentação no período"
+              contador={`${ordensMes.length} serviço(s)`}
+              tema="azul"
+              conteudoClassName="overflow-x-auto"
             >
-              <header className="flex items-center justify-between border-b border-base-border bg-base-surface2 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <CalendarDays size={16} className="text-amber-dark" />
-                  <h2 className="text-sm font-extrabold capitalize">
-                    {nomeMes(mes)}
-                  </h2>
-                </div>
-                <span className="font-mono text-[10px] text-ink-muted">
-                  {ordensMes.length} serviço(s)
-                </span>
-              </header>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-left text-sm">
+              <table className="w-full min-w-[760px] text-left text-sm">
                   <thead className="border-b border-base-border bg-white text-[10px] uppercase tracking-wider text-ink-faint">
                     <tr>
                       <Th>Técnico</Th>
@@ -103,14 +97,13 @@ export default async function TecnicosPage() {
                       />
                     ))}
                   </tbody>
-                </table>
-              </div>
+              </table>
               {linhas.length === 0 && (
                 <p className="p-8 text-center text-sm text-ink-muted">
                   Nenhum serviço atribuído neste mês.
                 </p>
               )}
-            </section>
+            </PainelDestaque>
           );
         })}
         {meses.length === 0 && (

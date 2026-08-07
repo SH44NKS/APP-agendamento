@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Pencil, ShieldCheck, UserRound, X } from "lucide-react";
+import { PainelDestaque } from "./PainelDestaque";
 
 type Pessoa = {
   id: string;
@@ -151,18 +152,14 @@ export function EquipeManager({ pessoas }: { pessoas: Pessoa[] }) {
 
   return (
     <div className="mt-7 space-y-6">
-      <section className="overflow-x-auto rounded-xl border border-base-border bg-base-surface">
-        <div className="flex items-center gap-3 border-b border-base-border bg-amber/5 px-4 py-4">
-          <span className="rounded-lg bg-amber/15 p-2 text-amber">
-            <ShieldCheck size={18} />
-          </span>
-          <div>
-            <h2 className="font-semibold text-ink">Administradores</h2>
-            <p className="text-xs text-ink-faint">
-              {administradores.length} {administradores.length === 1 ? "administrador" : "administradores"}
-            </p>
-          </div>
-        </div>
+      <PainelDestaque
+        Icone={ShieldCheck}
+        titulo="Administradores"
+        descricao="Acesso completo à operação e à equipe"
+        contador={administradores.length}
+        tema="amarelo"
+        conteudoClassName="overflow-x-auto"
+      >
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-base-border text-[10px] uppercase tracking-wider text-ink-faint">
             <tr>
@@ -174,20 +171,16 @@ export function EquipeManager({ pessoas }: { pessoas: Pessoa[] }) {
           </thead>
           <tbody>{administradores.map(linhaPessoa)}</tbody>
         </table>
-      </section>
+      </PainelDestaque>
 
-      <section className="overflow-x-auto rounded-xl border border-base-border bg-base-surface">
-        <div className="flex items-center gap-3 border-b border-base-border bg-base-surface2 px-4 py-4">
-          <span className="rounded-lg bg-base-surface p-2 text-ink-muted">
-            <UserRound size={18} />
-          </span>
-          <div>
-            <h2 className="font-semibold text-ink">Técnicos</h2>
-            <p className="text-xs text-ink-faint">
-              {tecnicos.length} {tecnicos.length === 1 ? "técnico" : "técnicos"}
-            </p>
-          </div>
-        </div>
+      <PainelDestaque
+        Icone={UserRound}
+        titulo="Técnicos"
+        descricao="Equipe disponível para receber ordens de serviço"
+        contador={tecnicos.length}
+        tema="azul"
+        conteudoClassName="overflow-x-auto"
+      >
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-base-border text-[10px] uppercase tracking-wider text-ink-faint">
             <tr>
@@ -199,7 +192,7 @@ export function EquipeManager({ pessoas }: { pessoas: Pessoa[] }) {
           </thead>
           <tbody>{tecnicos.map(linhaPessoa)}</tbody>
         </table>
-      </section>
+      </PainelDestaque>
 
       {erro && <p className="rounded-lg bg-red-500/10 p-3 text-xs text-red-700">{erro}</p>}
     </div>

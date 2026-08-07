@@ -1,7 +1,17 @@
 import Link from "next/link";
-import { BellRing, ListFilter, Siren } from "lucide-react";
+import {
+  BellRing,
+  CalendarCheck2,
+  ClipboardCheck,
+  ClipboardList,
+  Clock3,
+  Flame,
+  ListFilter,
+  Siren,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import { OSCard } from "@/components/OSCard";
+import { PainelDestaque, TemaPainel } from "@/components/PainelDestaque";
 import { RefreshDashboardButton } from "@/components/RefreshDashboardButton";
 import { isAdminUser } from "@/lib/auth";
 import { diasPendente, OrdemServico } from "@/lib/os";
@@ -178,11 +188,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       )}
 
       <section className="mt-7 grid grid-cols-2 gap-3 xl:grid-cols-5">
-        <Resumo label="Prioridade alta" valor={altas.length} detalhe="atendimento prioritário" alerta />
-        <Resumo label="Aguardando/reagendar" valor={pendentes.length} detalhe="aguardando contato" />
-        <Resumo label="Agendadas" valor={agendadas.length} detalhe="com data definida" />
-        <Resumo label="Concluídas" valor={concluidas.length} detalhe="aguardando conferência" />
-        <Resumo label="Críticas" valor={criticas.length} detalhe={`há ${vermelho}+ dias`} alerta />
+        <Resumo Icone={Siren} tema="vermelho" label="Prioridade alta" valor={altas.length} detalhe="atendimento prioritário" />
+        <Resumo Icone={Clock3} tema="amarelo" label="Aguardando/reagendar" valor={pendentes.length} detalhe="aguardando contato" />
+        <Resumo Icone={CalendarCheck2} tema="azul" label="Agendadas" valor={agendadas.length} detalhe="com data definida" />
+        <Resumo Icone={ClipboardCheck} tema="verde" label="Concluídas" valor={concluidas.length} detalhe="aguardando conferência" />
+        <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`há ${vermelho}+ dias`} />
       </section>
 
       <section className="mt-7 rounded-xl border border-base-border bg-white p-4 shadow-[0_10px_30px_rgba(17,24,39,.06)]">
@@ -200,7 +210,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
               <Link
                 key={id}
                 href={hrefRapido(id, tipoSelecionado)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${statusSelecionado === id ? "border-amber bg-amber/15 text-gray-900" : "border-base-border bg-white text-ink-muted hover:border-amber"}`}
+                className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${statusSelecionado === id ? classeStatusAtivo(id) : "border-base-border bg-white text-ink-muted hover:border-amber"}`}
               >
                 {label}
                 <span className="rounded-full bg-base-surface2 px-2 py-0.5 font-mono text-[9px] font-bold text-ink-muted">{total}</span>
@@ -233,14 +243,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
         />
       )}
 
-      <section className="mt-9">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="section-title">Ordens de serviço</h2>
-            <p className="mt-1 text-xs text-ink-muted">
-              {ordensRegulares.length} resultado(s) sem prioridade alta ativa
-            </p>
-          </div>
+      <PainelDestaque
+        Icone={ClipboardList}
+        titulo="Ordens de serviço"
+        descricao="Lista operacional conforme os filtros selecionados"
+        contador={ordensRegulares.length}
+        tema="neutro"
+        className="mt-9"
+      >
+        <div className="mb-4 flex justify-end">
           <a className="btn-secondary" href="/api/exportar">
             Exportar CSV
           </a>
@@ -318,7 +329,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
             <div className="empty-state">Nenhuma ordem comum encontrada.</div>
           )}
         </div>
-      </section>
+      </PainelDestaque>
     </div>
   );
 }
@@ -333,23 +344,14 @@ function BlocoPrioridade({
   vermelho: number;
 }) {
   return (
-    <section className="mt-8 rounded-2xl border border-red-300 bg-red-100/60 p-3 shadow-[0_12px_35px_rgba(220,38,38,.08)] sm:p-5">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div className="flex items-start gap-2 text-red-700">
-          <Siren size={19} className="mt-0.5 shrink-0" />
-          <div>
-            <h2 className="text-sm font-extrabold uppercase tracking-[.08em]">
-              Prioridade alta
-            </h2>
-            <p className="mt-1 text-xs text-red-700/80">
-              Serviços que precisam ser atendidos primeiro
-            </p>
-          </div>
-        </div>
-        <span className="rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold text-white">
-          {lista.length} {lista.length === 1 ? "OS" : "OS"}
-        </span>
-      </div>
+    <PainelDestaque
+      Icone={Siren}
+      titulo="Prioridade alta"
+      descricao="Serviços que precisam ser atendidos primeiro"
+      contador={`${lista.length} OS`}
+      tema="vermelho"
+      className="mt-8"
+    >
       <div className="card-grid">
         {lista.map((ordem) => (
           <OSCard
@@ -360,28 +362,45 @@ function BlocoPrioridade({
           />
         ))}
       </div>
-    </section>
+    </PainelDestaque>
   );
 }
 
 function Resumo({
+  Icone,
+  tema,
   label,
   valor,
   detalhe,
-  alerta,
 }: {
+  Icone: typeof Siren;
+  tema: TemaPainel;
   label: string;
   valor: number;
   detalhe: string;
-  alerta?: boolean;
 }) {
+  const classes: Record<TemaPainel, string> = {
+    vermelho: "border-red-200 bg-gradient-to-br from-red-100 to-white text-red-800",
+    laranja: "border-orange-200 bg-gradient-to-br from-orange-100 to-white text-orange-800",
+    amarelo: "border-yellow-300 bg-gradient-to-br from-yellow-100 to-white text-amber-dark",
+    azul: "border-blue-200 bg-gradient-to-br from-blue-100 to-white text-blue-800",
+    verde: "border-emerald-200 bg-gradient-to-br from-emerald-100 to-white text-emerald-800",
+    roxo: "border-violet-200 bg-gradient-to-br from-violet-100 to-white text-violet-800",
+    neutro: "border-slate-200 bg-gradient-to-br from-slate-100 to-white text-slate-800",
+  };
   return (
-    <div className={`stat-card min-w-0 p-4 sm:p-5 ${alerta && valor ? "border-red-500/40" : ""}`}>
-      <p className="break-words text-[11px] font-medium leading-4 text-ink-muted sm:text-xs">{label}</p>
-      <p className={`mt-2 text-2xl font-bold sm:mt-3 sm:text-3xl ${alerta && valor ? "text-red-700" : ""}`}>
+    <div className={`relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-[0_10px_30px_rgba(17,24,39,.05)] sm:p-5 ${classes[tema]}`}>
+      <Icone size={58} strokeWidth={1.5} aria-hidden="true" className="pointer-events-none absolute -right-1 -top-1 opacity-10" />
+      <div className="relative z-10 flex items-start justify-between gap-2">
+        <p className="break-words text-[11px] font-bold leading-4 sm:text-xs">{label}</p>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-current/15 bg-white/70">
+          <Icone size={14} aria-hidden="true" />
+        </span>
+      </div>
+      <p className="relative z-10 mt-2 text-2xl font-black sm:mt-3 sm:text-3xl">
         {valor}
       </p>
-      <p className="mt-1 break-words text-[10px] leading-4 text-ink-faint sm:text-[11px]">{detalhe}</p>
+      <p className="relative z-10 mt-1 break-words text-[10px] leading-4 opacity-65 sm:text-[11px]">{detalhe}</p>
     </div>
   );
 }
@@ -420,5 +439,15 @@ function classeTipoAtivo(tipo: string) {
   if (tipo === "instalacao") return "border-emerald-300 bg-emerald-50 text-emerald-700";
   if (tipo === "manutencao") return "border-amber bg-yellow-50 text-amber-dark";
   if (tipo === "retirada") return "border-red-300 bg-red-50 text-red-700";
+  return "border-amber bg-amber/15 text-gray-900";
+}
+
+function classeStatusAtivo(status: string) {
+  if (status === "pendente") return "border-slate-300 bg-slate-100 text-slate-800";
+  if (status === "aguardando_retorno") return "border-yellow-300 bg-yellow-100 text-amber-dark";
+  if (status === "agendado") return "border-blue-300 bg-blue-100 text-blue-800";
+  if (status === "reagendar") return "border-orange-300 bg-orange-100 text-orange-800";
+  if (status === "concluido_tecnico") return "border-emerald-300 bg-emerald-100 text-emerald-800";
+  if (status === "finalizado") return "border-green-300 bg-green-100 text-green-800";
   return "border-amber bg-amber/15 text-gray-900";
 }
