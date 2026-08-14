@@ -25,6 +25,7 @@ type Props = {
 };
 
 type AplicativoWhatsApp = "normal" | "business";
+type DestinoWhatsApp = "cliente" | "setor";
 
 const PACOTES_WHATSAPP: Record<AplicativoWhatsApp, string> = {
   normal: "com.whatsapp",
@@ -46,7 +47,8 @@ export function OSActions({
   const [erro, setErro] = useState("");
   const [motivo, setMotivo] = useState<MotivoOcorrencia | "">("");
   const [detalhe, setDetalhe] = useState("");
-  const [escolhendoWhatsApp, setEscolhendoWhatsApp] = useState(false);
+  const [escolhendoWhatsApp, setEscolhendoWhatsApp] =
+    useState<DestinoWhatsApp | null>(null);
 
   async function post(acao: string, body?: object) {
     setBusy(true);
@@ -67,21 +69,23 @@ export function OSActions({
   }
 
   function abrirWhatsApp(aplicativo: AplicativoWhatsApp) {
-    setEscolhendoWhatsApp(false);
+    const destino = escolhendoWhatsApp;
+    const url = destino === "setor" ? setorWhatsappUrl : whatsappUrl;
+    setEscolhendoWhatsApp(null);
 
-    if (!isAdmin && status === "pendente") {
+    if (destino === "cliente" && !isAdmin && status === "pendente") {
       void post("status", { status: "aguardando_retorno" });
     }
 
     if (/Android/i.test(navigator.userAgent)) {
       window.location.href = criarIntentWhatsApp(
-        whatsappUrl,
+        url,
         PACOTES_WHATSAPP[aplicativo],
       );
       return;
     }
 
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   const podeAgendar = [
@@ -100,75 +104,48 @@ export function OSActions({
     <div className="mt-5 space-y-3">
       <button
         type="button"
-        onClick={() => setEscolhendoWhatsApp((aberto) => !aberto)}
-        aria-expanded={escolhendoWhatsApp}
+        onClick={() =>
+          setEscolhendoWhatsApp((aberto) =>
+            aberto === "cliente" ? null : "cliente",
+          )
+        }
+        aria-expanded={escolhendoWhatsApp === "cliente"}
         className="btn-primary w-full bg-green-600 text-white hover:bg-green-500"
       >
         <MessageCircle size={16} />
         Abrir conversa no WhatsApp
       </button>
 
-      {escolhendoWhatsApp && (
-        <div
-          role="dialog"
-          aria-label="Escolher aplicativo do WhatsApp"
-          className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-[0_10px_30px_rgba(17,24,39,.08)]"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-extrabold text-green-900">
-                Por qual aplicativo deseja enviar?
-              </h2>
-              <p className="mt-1 text-xs leading-5 text-green-800/80">
-                A mensagem e o número do cliente já estão preenchidos.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setEscolhendoWhatsApp(false)}
-              aria-label="Fechar seleção do WhatsApp"
-              className="rounded-md p-1.5 text-green-800 hover:bg-green-100"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-2">
-            <button
-              type="button"
-              onClick={() => abrirWhatsApp("normal")}
-              className="btn-secondary w-full justify-start border-green-300 bg-white text-green-900 hover:bg-green-100"
-            >
-              <MessageCircle size={17} className="text-green-600" />
-              WhatsApp normal
-            </button>
-            <button
-              type="button"
-              onClick={() => abrirWhatsApp("business")}
-              className="btn-secondary w-full justify-start border-green-300 bg-white text-green-900 hover:bg-green-100"
-            >
-              <BriefcaseBusiness size={17} className="text-green-700" />
-              WhatsApp Business
-            </button>
-          </div>
-
-          <p className="mt-3 text-[10px] leading-4 text-green-900/70">
-            A escolha direta funciona em celulares Android. Em iPhone ou computador,
-            será usado o WhatsApp padrão configurado no aparelho.
-          </p>
-        </div>
+      {escolhendoWhatsApp === "cliente" && (
+        <SeletorWhatsApp
+          descricao="A mensagem e o número do cliente já estão preenchidos."
+          onEscolher={abrirWhatsApp}
+          onFechar={() => setEscolhendoWhatsApp(null)}
+        />
       )}
 
       {!isAdmin && status === "agendado" && (
-        <a
-          href={setorWhatsappUrl}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          type="button"
+          onClick={() =>
+            setEscolhendoWhatsApp((aberto) =>
+              aberto === "setor" ? null : "setor",
+            )
+          }
+          aria-expanded={escolhendoWhatsApp === "setor"}
           className="btn-secondary w-full border-green-300 bg-green-50 text-green-800 hover:bg-green-100"
         >
           <Send size={16} />
           Enviar para lançamento no app
-        </a>
+        </button>
+      )}
+
+      {!isAdmin && status === "agendado" && escolhendoWhatsApp === "setor" && (
+        <SeletorWhatsApp
+          descricao="A mensagem da OS e o número do setor já estão preenchidos."
+          onEscolher={abrirWhatsApp}
+          onFechar={() => setEscolhendoWhatsApp(null)}
+        />
       )}
 
       {podeAgendar && (
@@ -276,6 +253,67 @@ export function OSActions({
           {erro}
         </p>
       )}
+    </div>
+  );
+}
+
+function SeletorWhatsApp({
+  descricao,
+  onEscolher,
+  onFechar,
+}: {
+  descricao: string;
+  onEscolher: (aplicativo: AplicativoWhatsApp) => void;
+  onFechar: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-label="Escolher aplicativo do WhatsApp"
+      className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-[0_10px_30px_rgba(17,24,39,.08)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-extrabold text-green-900">
+            Por qual aplicativo deseja enviar?
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-green-800/80">
+            {descricao}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onFechar}
+          aria-label="Fechar seleção do WhatsApp"
+          className="rounded-md p-1.5 text-green-800 hover:bg-green-100"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        <button
+          type="button"
+          onClick={() => onEscolher("normal")}
+          className="btn-secondary w-full justify-start border-green-300 bg-white text-green-900 hover:bg-green-100"
+        >
+          <MessageCircle size={17} className="text-green-600" />
+          WhatsApp pessoal
+        </button>
+        <button
+          type="button"
+          onClick={() => onEscolher("business")}
+          className="btn-secondary w-full justify-start border-green-300 bg-white text-green-900 hover:bg-green-100"
+        >
+          <BriefcaseBusiness size={17} className="text-green-700" />
+          WhatsApp de trabalho (Business)
+        </button>
+      </div>
+
+      <p className="mt-3 text-[10px] leading-4 text-green-900/70">
+        A escolha direta funciona em celulares Android. Em iPhone ou computador,
+        será usado o WhatsApp padrão configurado no aparelho.
+      </p>
     </div>
   );
 }
