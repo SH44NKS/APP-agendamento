@@ -31,7 +31,11 @@ type Alerta = {
   autor_id: string;
   texto: string;
   autor?: { nome?: string; papel?: string } | null;
-  os?: { cliente_nome?: string; veiculo_identificador?: string } | null;
+  os?: {
+    cliente_nome?: string;
+    veiculo_identificador?: string;
+    status?: string;
+  } | null;
 };
 
 const STATUS_ENCERRADOS = ["finalizado", "concluido", "cancelado"];
@@ -60,7 +64,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
     s
       .from("observacoes_os")
       .select(
-        "id,os_id,autor_id,texto,criado_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador)",
+        "id,os_id,autor_id,texto,criado_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,status)",
       )
       .is("visto_admin_em", null)
       .order("criado_em", { ascending: false }),
@@ -76,7 +80,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   if (!isAdminUser(user?.email, perfil?.papel)) redirect("/tecnico");
 
   const chamados = ((alertas ?? []) as unknown as Alerta[]).filter(
-    (alerta) => alerta.autor_id !== user?.id && alerta.autor?.papel !== "admin",
+    (alerta) =>
+      alerta.autor_id !== user?.id &&
+      alerta.autor?.papel !== "admin" &&
+      !STATUS_ENCERRADOS.includes(alerta.os?.status ?? ""),
   );
   const amarelo = config?.alerta_amarelo_dias ?? 3;
   const vermelho = config?.alerta_vermelho_dias ?? 7;

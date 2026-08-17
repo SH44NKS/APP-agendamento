@@ -19,8 +19,14 @@ type Alerta = {
   os_id: string;
   texto: string;
   autor?: { nome: string } | null;
-  os?: { cliente_nome: string; veiculo_identificador: string } | null;
+  os?: {
+    cliente_nome: string;
+    veiculo_identificador: string;
+    status: string;
+  } | null;
 };
+
+const STATUS_ENCERRADOS = ["finalizado", "concluido", "cancelado"];
 
 export default async function PendenciasPage() {
   const s = createClient();
@@ -32,7 +38,7 @@ export default async function PendenciasPage() {
         .order("criado_em", { ascending: true }),
       s.from("observacoes_os")
         .select(
-          "id,os_id,texto,autor:autor_id(nome),os:os_id(cliente_nome,veiculo_identificador)",
+          "id,os_id,texto,autor:autor_id(nome),os:os_id(cliente_nome,veiculo_identificador,status)",
         )
         .is("visto_admin_em", null)
         .order("criado_em", { ascending: false }),
@@ -60,6 +66,10 @@ export default async function PendenciasPage() {
       dataCalendarioBahia(o.data_hora_agendada) === hojeBahia,
   );
   const concluir = lista.filter((o) => o.status === "concluido_tecnico");
+  const observacoesAbertas = ((observacoes ?? []) as unknown as Alerta[]).filter(
+    (observacao) =>
+      !STATUS_ENCERRADOS.includes(observacao.os?.status ?? ""),
+  );
   const motivos = Object.entries(MOTIVO_LABEL)
     .map(([id, label]) => ({
       id,
@@ -111,12 +121,12 @@ export default async function PendenciasPage() {
           Icone={BellRing}
           titulo="Observações não visualizadas"
           descricao="Chamados enviados pelos técnicos"
-          contador={observacoes?.length ?? 0}
+          contador={observacoesAbertas.length}
           tema="laranja"
           className="xl:col-span-2"
         >
           <div className="grid gap-2 sm:grid-cols-2">
-            {(observacoes as Alerta[] | null)?.map((o) => (
+            {observacoesAbertas.map((o) => (
               <Link
                 key={o.id}
                 href={`/os/${o.os_id}`}
@@ -130,7 +140,7 @@ export default async function PendenciasPage() {
                 </span>
               </Link>
             ))}
-            {!observacoes?.length && <Vazio />}
+            {observacoesAbertas.length === 0 && <Vazio />}
           </div>
         </PainelDestaque>
 
