@@ -33,7 +33,7 @@ export default async function OSDetalhePage({
     { data: config },
   ] = await Promise.all([
     s.from("ordens_servico")
-      .select("*, tecnico:tecnico_id(nome)")
+      .select("*, tecnico:tecnico_id(nome), observacoes_os(criado_em)")
       .eq("id", params.id)
       .single(),
     s.auth.getUser(),
@@ -63,7 +63,7 @@ export default async function OSDetalhePage({
   const isAdmin = isAdminUser(auth.user?.email, perfil?.papel);
   const critico =
     ["pendente", "aguardando_retorno", "reagendar"].includes(os.status) &&
-    diasSemMovimento(os as OrdemServico) >=
+    diasSemMovimento(os as OrdemServico) >
       (config?.alerta_vermelho_dias ?? 7);
 
   return (

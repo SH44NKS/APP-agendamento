@@ -151,5 +151,5 @@ function mensagemCobranca(grupo: GrupoCritico, limite: number) {
     linhas.push(`• E mais ${grupo.ordens.length - exibidas.length} OS no sistema`);
   }
 
-  return `Olá, ${primeiroNome}! Existem ${grupo.ordens.length} ordens de serviço críticas atribuídas a você, sem movimentação há ${limite} dias ou mais.\n\nPor favor, entre novamente em contato com os associados e registre o novo contato em cada OS:\n\n${linhas.join("\n")}\n\nAcesse o APP agendamento para atualizar os serviços.`;
+  return `Olá, ${primeiroNome}! Existem ${grupo.ordens.length} ordens de serviço críticas atribuídas a você, sem movimentação há mais de ${limite} dias.\n\nPor favor, entre novamente em contato com os associados e registre o novo contato em cada OS:\n\n${linhas.join("\n")}\n\nAcesse o APP agendamento para atualizar os serviços.`;
 }

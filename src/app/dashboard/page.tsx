@@ -52,7 +52,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   ] = await Promise.all([
     s
       .from("ordens_servico")
-      .select("*, tecnico:tecnico_id(nome)")
+      .select("*, tecnico:tecnico_id(nome), observacoes_os(criado_em)")
       .order("criado_em", { ascending: false }),
     s
       .from("profiles")
@@ -116,7 +116,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   const agendadas = todas.filter((ordem) => ordem.status === "agendado");
   const concluidas = todas.filter((ordem) => ordem.status === "concluido_tecnico");
   const criticas = pendentes.filter(
-    (ordem) => diasSemMovimento(ordem) >= vermelho,
+    (ordem) => diasSemMovimento(ordem) > vermelho,
   );
   const altas = todas.filter(
     (ordem) => ordem.prioridade === "alta" && !STATUS_ENCERRADOS.includes(ordem.status),
@@ -201,7 +201,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
         <Resumo Icone={Clock3} tema="amarelo" label="Aguardando/reagendar" valor={pendentes.length} detalhe="aguardando contato" />
         <Resumo Icone={CalendarCheck2} tema="azul" label="Agendadas" valor={agendadas.length} detalhe="com data definida" />
         <Resumo Icone={ClipboardCheck} tema="verde" label="Concluídas" valor={concluidas.length} detalhe="aguardando conferência" />
-        <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`sem movimento há ${vermelho}+ dias`} href="/dashboard/criticos" />
+        <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`sem movimento por mais de ${vermelho} dias`} href="/dashboard/criticos" />
       </section>
 
       <section className="mt-7 rounded-xl border border-base-border bg-white p-4 shadow-[0_10px_30px_rgba(17,24,39,.06)]">

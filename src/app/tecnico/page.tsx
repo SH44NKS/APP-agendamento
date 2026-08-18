@@ -17,7 +17,7 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
   const [{ data: ordens }, { data: perfil }, { data: config }] = await Promise.all([
     s
       .from("ordens_servico")
-      .select("*")
+      .select("*,observacoes_os(criado_em)")
       .eq("tecnico_id", user?.id)
       .order("criado_em", { ascending: false }),
     s.from("profiles").select("nome").eq("id", user?.id).single(),
@@ -43,7 +43,7 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
   const criticas = lista.filter(
     (ordem) =>
       STATUS_ABERTOS.includes(ordem.status) &&
-      diasSemMovimento(ordem) >= limiteCritico,
+      diasSemMovimento(ordem) > limiteCritico,
   );
   const idsCriticas = new Set(criticas.map((ordem) => ordem.id));
   const prioritarias = lista.filter(
@@ -123,7 +123,7 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
           <PainelDestaque
             Icone={Flame}
             titulo="Novo contato necessário"
-            descricao={`Estas OS estão sem movimentação há ${limiteCritico} dias ou mais. Abra cada uma após falar com o associado.`}
+            descricao={`Estas OS estão sem movimentação há mais de ${limiteCritico} dias. Abra cada uma após falar com o associado.`}
             contador={criticas.length}
             tema="laranja"
             className="mt-4"

@@ -19,7 +19,7 @@ export default async function CriticosPage() {
     await Promise.all([
       s.from("profiles").select("papel").eq("id", user.id).maybeSingle(),
       s.from("ordens_servico")
-        .select("*,tecnico:tecnico_id(nome)")
+        .select("*,tecnico:tecnico_id(nome),observacoes_os(criado_em)")
         .in("status", STATUS_ABERTOS)
         .order("atualizado_em", { ascending: true }),
       s.from("configuracoes").select("alerta_vermelho_dias").single(),
@@ -29,7 +29,7 @@ export default async function CriticosPage() {
 
   const limite = config?.alerta_vermelho_dias ?? 7;
   const criticas = ((ordens ?? []) as OrdemServico[]).filter(
-    (ordem) => diasSemMovimento(ordem) >= limite,
+    (ordem) => diasSemMovimento(ordem) > limite,
   );
   const grupos = agrupar(criticas);
 
@@ -38,7 +38,7 @@ export default async function CriticosPage() {
       <p className="eyebrow">ACOMPANHAMENTO DE RECONTATO</p>
       <h1 className="mt-2 text-3xl font-bold">OS críticas por técnico</h1>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-muted">
-        Serviços sem movimentação há {limite} dias ou mais. Envie a cobrança ao
+        Serviços sem movimentação por mais de {limite} dias. Envie a cobrança ao
         técnico e acompanhe o novo contato pelo histórico da OS.
       </p>
 
