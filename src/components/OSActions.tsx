@@ -6,6 +6,7 @@ import {
   BriefcaseBusiness,
   CalendarPlus,
   CheckCircle2,
+  Flame,
   MessageCircle,
   RotateCcw,
   Send,
@@ -22,6 +23,7 @@ type Props = {
   dataAtual: string | null;
   status: string;
   isAdmin: boolean;
+  critico?: boolean;
 };
 
 type AplicativoWhatsApp = "normal" | "business";
@@ -40,6 +42,7 @@ export function OSActions({
   dataAtual,
   status,
   isAdmin,
+  critico = false,
 }: Props) {
   const router = useRouter();
   const [data, setData] = useState(dataAtual ? dataAtual.slice(0, 10) : "");
@@ -147,6 +150,32 @@ export function OSActions({
           onFechar={() => setEscolhendoWhatsApp(null)}
         />
       )}
+
+      {!isAdmin &&
+        critico &&
+        ["pendente", "aguardando_retorno", "reagendar"].includes(status) && (
+          <div className="rounded-xl border border-orange-300 bg-gradient-to-br from-orange-100 to-white p-4">
+            <div className="flex items-start gap-2 text-orange-900">
+              <Flame size={17} className="mt-0.5 shrink-0" />
+              <div>
+                <h2 className="text-sm font-extrabold">OS crítica</h2>
+                <p className="mt-1 text-xs leading-5 text-orange-900/75">
+                  Depois de falar novamente com o associado, registre o contato
+                  para atualizar a movimentação desta OS.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => post("recontato")}
+              disabled={busy}
+              className="btn-secondary mt-3 w-full border-orange-300 bg-white text-orange-900 hover:bg-orange-100"
+            >
+              <CheckCircle2 size={16} />
+              {busy ? "Registrando..." : "Registrar novo contato"}
+            </button>
+          </div>
+        )}
 
       {podeAgendar && (
         <div className="rounded-xl border border-base-border bg-white p-4">

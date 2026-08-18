@@ -1,25 +1,27 @@
 import Link from "next/link";
-import { CalendarDays, ClipboardList, LogOut, Search, Siren } from "lucide-react";
+import { CalendarDays, ClipboardList, Flame, LogOut, Search, Siren } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { OSCard } from "@/components/OSCard";
 import { PainelDestaque } from "@/components/PainelDestaque";
-import { OrdemServico, STATUS_LABEL } from "@/lib/os";
+import { diasSemMovimento, OrdemServico, STATUS_LABEL } from "@/lib/os";
 import { createClient } from "@/lib/supabase/server";
 
 type Filtros = { busca?: string; status?: string };
 
 const STATUS_ENCERRADOS = ["finalizado", "concluido", "cancelado"];
+const STATUS_ABERTOS = ["pendente", "aguardando_retorno", "reagendar"];
 
 export default async function TecnicoPage({ searchParams }: { searchParams: Filtros }) {
   const s = createClient();
   const { data: { user } } = await s.auth.getUser();
-  const [{ data: ordens }, { data: perfil }] = await Promise.all([
+  const [{ data: ordens }, { data: perfil }, { data: config }] = await Promise.all([
     s
       .from("ordens_servico")
       .select("*")
       .eq("tecnico_id", user?.id)
       .order("criado_em", { ascending: false }),
     s.from("profiles").select("nome").eq("id", user?.id).single(),
+    s.from("configuracoes").select("alerta_vermelho_dias").single(),
   ]);
 
   const busca = (searchParams.busca ?? "").trim().toLocaleLowerCase("pt-BR");
@@ -37,11 +39,22 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
     )
     .sort((a, b) => +new Date(b.criado_em) - +new Date(a.criado_em));
 
-  const prioritarias = lista.filter(
-    (ordem) => ordem.prioridade === "alta" && !STATUS_ENCERRADOS.includes(ordem.status),
+  const limiteCritico = config?.alerta_vermelho_dias ?? 7;
+  const criticas = lista.filter(
+    (ordem) =>
+      STATUS_ABERTOS.includes(ordem.status) &&
+      diasSemMovimento(ordem) >= limiteCritico,
   );
+  const idsCriticas = new Set(criticas.map((ordem) => ordem.id));
+  const prioritarias = lista.filter(
+    (ordem) =>
+      ordem.prioridade === "alta" &&
+      !STATUS_ENCERRADOS.includes(ordem.status) &&
+      !idsCriticas.has(ordem.id),
+  );
+  const idsPrioritarias = new Set(prioritarias.map((ordem) => ordem.id));
   const demais = lista.filter(
-    (ordem) => !prioritarias.some((prioritaria) => prioritaria.id === ordem.id),
+    (ordem) => !idsCriticas.has(ordem.id) && !idsPrioritarias.has(ordem.id),
   );
 
   return (
@@ -105,6 +118,24 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
         </form>
 
         <p className="mt-4 text-xs text-ink-muted">{lista.length} resultado(s)</p>
+
+        {criticas.length > 0 && (
+          <PainelDestaque
+            Icone={Flame}
+            titulo="Novo contato necessário"
+            descricao={`Estas OS estão sem movimentação há ${limiteCritico} dias ou mais. Abra cada uma após falar com o associado.`}
+            contador={criticas.length}
+            tema="laranja"
+            className="mt-4"
+            conteudoClassName="p-3"
+          >
+            <div className="flex flex-col gap-3">
+              {criticas.map((ordem) => (
+                <OSCard key={ordem.id} os={ordem} vermelho={limiteCritico} />
+              ))}
+            </div>
+          </PainelDestaque>
+        )}
 
         {prioritarias.length > 0 && (
           <PainelDestaque

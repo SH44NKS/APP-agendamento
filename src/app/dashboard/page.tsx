@@ -14,7 +14,7 @@ import { OSCard } from "@/components/OSCard";
 import { PainelDestaque, TemaPainel } from "@/components/PainelDestaque";
 import { RefreshDashboardButton } from "@/components/RefreshDashboardButton";
 import { isAdminUser } from "@/lib/auth";
-import { diasPendente, OrdemServico } from "@/lib/os";
+import { diasSemMovimento, OrdemServico } from "@/lib/os";
 import { createClient } from "@/lib/supabase/server";
 
 type Filtros = {
@@ -115,7 +115,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   const pendentes = todas.filter((ordem) => STATUS_PENDENTES.includes(ordem.status));
   const agendadas = todas.filter((ordem) => ordem.status === "agendado");
   const concluidas = todas.filter((ordem) => ordem.status === "concluido_tecnico");
-  const criticas = pendentes.filter((ordem) => diasPendente(ordem) >= vermelho);
+  const criticas = pendentes.filter(
+    (ordem) => diasSemMovimento(ordem) >= vermelho,
+  );
   const altas = todas.filter(
     (ordem) => ordem.prioridade === "alta" && !STATUS_ENCERRADOS.includes(ordem.status),
   );
@@ -199,7 +201,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
         <Resumo Icone={Clock3} tema="amarelo" label="Aguardando/reagendar" valor={pendentes.length} detalhe="aguardando contato" />
         <Resumo Icone={CalendarCheck2} tema="azul" label="Agendadas" valor={agendadas.length} detalhe="com data definida" />
         <Resumo Icone={ClipboardCheck} tema="verde" label="Concluídas" valor={concluidas.length} detalhe="aguardando conferência" />
-        <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`há ${vermelho}+ dias`} />
+        <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`sem movimento há ${vermelho}+ dias`} href="/dashboard/criticos" />
       </section>
 
       <section className="mt-7 rounded-xl border border-base-border bg-white p-4 shadow-[0_10px_30px_rgba(17,24,39,.06)]">
@@ -379,12 +381,14 @@ function Resumo({
   label,
   valor,
   detalhe,
+  href,
 }: {
   Icone: typeof Siren;
   tema: TemaPainel;
   label: string;
   valor: number;
   detalhe: string;
+  href?: string;
 }) {
   const classes: Record<TemaPainel, string> = {
     vermelho: "border-red-200 bg-gradient-to-br from-red-100 to-white text-red-800",
@@ -395,7 +399,7 @@ function Resumo({
     roxo: "border-violet-200 bg-gradient-to-br from-violet-100 to-white text-violet-800",
     neutro: "border-slate-200 bg-gradient-to-br from-slate-100 to-white text-slate-800",
   };
-  return (
+  const conteudo = (
     <div className={`relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-[0_10px_30px_rgba(17,24,39,.05)] sm:p-5 ${classes[tema]}`}>
       <Icone size={58} strokeWidth={1.5} aria-hidden="true" className="pointer-events-none absolute -right-1 -top-1 opacity-10" />
       <div className="relative z-10 flex items-start justify-between gap-2">
@@ -409,6 +413,13 @@ function Resumo({
       </p>
       <p className="relative z-10 mt-1 break-words text-[10px] leading-4 opacity-65 sm:text-[11px]">{detalhe}</p>
     </div>
+  );
+  return href ? (
+    <Link href={href} className="block transition hover:-translate-y-0.5">
+      {conteudo}
+    </Link>
+  ) : (
+    conteudo
   );
 }
 

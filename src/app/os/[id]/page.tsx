@@ -11,6 +11,7 @@ import {
   linkGoogleAgenda,
   mensagemWhatsapp,
   mensagemWhatsappSetor,
+  diasSemMovimento,
   OrdemServico,
   STATUS_LABEL,
   TipoServico,
@@ -29,6 +30,7 @@ export default async function OSDetalhePage({
     { data: tecnicos },
     { data: historico },
     { data: observacoes },
+    { data: config },
   ] = await Promise.all([
     s.from("ordens_servico")
       .select("*, tecnico:tecnico_id(nome)")
@@ -48,6 +50,7 @@ export default async function OSDetalhePage({
       .select("*, autor:autor_id(nome)")
       .eq("os_id", params.id)
       .order("criado_em", { ascending: false }),
+    s.from("configuracoes").select("alerta_vermelho_dias").single(),
   ]);
 
   if (!os) return notFound();
@@ -58,6 +61,10 @@ export default async function OSDetalhePage({
     .eq("id", auth.user?.id)
     .maybeSingle();
   const isAdmin = isAdminUser(auth.user?.email, perfil?.papel);
+  const critico =
+    ["pendente", "aguardando_retorno", "reagendar"].includes(os.status) &&
+    diasSemMovimento(os as OrdemServico) >=
+      (config?.alerta_vermelho_dias ?? 7);
 
   return (
     <main className="min-h-screen bg-base-bg px-4 py-8">
@@ -169,6 +176,7 @@ export default async function OSDetalhePage({
               dataAtual={os.data_hora_agendada}
               status={os.status}
               isAdmin={isAdmin}
+              critico={critico}
             />
             {isAdmin && (
               <div className="mt-3">
@@ -199,6 +207,13 @@ function Linha({ label, valor }: { label: string; valor: string }) {
 function acao(a: string, d: Record<string, unknown>) {
   if (a === "insert") return "Ordem criada";
   const status = String(d?.status_novo ?? "");
+  const statusAnterior = String(d?.status_anterior ?? "");
+  if (
+    status === "aguardando_retorno" &&
+    statusAnterior === "aguardando_retorno"
+  ) {
+    return "Novo contato registrado";
+  }
   if (status) return `Status alterado para ${STATUS_LABEL[status] ?? status}`;
   if (d?.tecnico_anterior !== d?.tecnico_novo) return "Técnico reatribuído";
   return "Ordem atualizada";

@@ -24,6 +24,7 @@ export type OrdemServico = {
   observacoes?: string | null;
   data_hora_agendada: string | null;
   criado_em: string;
+  atualizado_em?: string | null;
   concluido_em?: string | null;
   concluido_tecnico_em?: string | null;
   finalizado_em?: string | null;
@@ -79,10 +80,16 @@ export const STATUS_LABEL: Record<string, string> = {
 export function diasPendente(os: OrdemServico) {
   return Math.max(0, diferencaDiasBahia(os.criado_em));
 }
+export function diasSemMovimento(os: OrdemServico) {
+  return Math.max(
+    0,
+    diferencaDiasBahia(os.atualizado_em || os.criado_em),
+  );
+}
 export function statusVisual(os: OrdemServico, amarelo = 3, vermelho = 7) {
   if (!["aguardando_retorno", "pendente", "reagendar"].includes(os.status))
     return os.status;
-  const dias = diasPendente(os);
+  const dias = diasSemMovimento(os);
   return dias >= vermelho
     ? "critico"
     : dias >= amarelo
