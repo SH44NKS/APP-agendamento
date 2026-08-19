@@ -2,7 +2,6 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
-const TEMPO_LIMITE_AUTENTICACAO = 5_000;
 
 function rotaPublica(path: string) {
   return (
@@ -12,19 +11,6 @@ function rotaPublica(path: string) {
     path === "/termos" ||
     path.startsWith("/auth")
   );
-}
-
-async function comTempoLimite<T>(operacao: Promise<T>, limite: number) {
-  let temporizador: ReturnType<typeof setTimeout> | undefined;
-  const tempoEsgotado = new Promise<null>((resolve) => {
-    temporizador = setTimeout(() => resolve(null), limite);
-  });
-
-  try {
-    return await Promise.race([operacao, tempoEsgotado]);
-  } finally {
-    if (temporizador) clearTimeout(temporizador);
-  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -64,18 +50,15 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  let user = null;
+  let autenticado = false;
   try {
-    const resultado = await comTempoLimite(
-      supabase.auth.getUser(),
-      TEMPO_LIMITE_AUTENTICACAO
-    );
-    user = resultado?.data.user ?? null;
+    const { data, error } = await supabase.auth.getClaims();
+    autenticado = !error && Boolean(data?.claims?.sub);
   } catch {
-    user = null;
+    autenticado = false;
   }
 
-  if (!user) {
+  if (!autenticado) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

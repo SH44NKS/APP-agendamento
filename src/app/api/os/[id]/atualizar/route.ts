@@ -1,8 +1,8 @@
-import {createClient} from "@/lib/supabase/server";
+import {createClient,getAuthUser} from "@/lib/supabase/server";
 import {NextResponse} from "next/server";
 import {isAdminUser} from "@/lib/auth";
 
-async function adminClient(){const s=createClient();const{data:{user}}=await s.auth.getUser();if(!user)return{s,user:null,admin:false};const{data:p}=await s.from("profiles").select("papel").eq("id",user.id).maybeSingle();return{s,user,admin:isAdminUser(user.email,p?.papel)}}
+async function adminClient(){const s=createClient();const{data:{user}}=await getAuthUser(s);if(!user)return{s,user:null,admin:false};const{data:p}=await s.from("profiles").select("papel").eq("id",user.id).maybeSingle();return{s,user,admin:isAdminUser(user.email,p?.papel)}}
 
 export async function POST(req:Request,{params}:{params:{id:string}}){
   const{s,user,admin}=await adminClient();if(!user)return NextResponse.json({error:"Não autenticado"},{status:401});if(!admin)return NextResponse.json({error:"Sem permissão"},{status:403});

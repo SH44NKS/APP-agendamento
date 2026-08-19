@@ -12,7 +12,7 @@ import { PainelDestaque, TemaPainel } from "@/components/PainelDestaque";
 import { isAdminUser } from "@/lib/auth";
 import { dataCalendarioBahia } from "@/lib/datetime";
 import { diasPendente, MOTIVO_LABEL, OrdemServico, TIPO_LABEL } from "@/lib/os";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 type Alerta = {
   id: string;
@@ -32,7 +32,7 @@ export default async function PendenciasPage() {
   const s = createClient();
   const [{ data: auth }, { data: ordens }, { data: observacoes }] =
     await Promise.all([
-      s.auth.getUser(),
+      getAuthUser(s),
       s.from("ordens_servico")
         .select("*,tecnico:tecnico_id(nome)")
         .order("criado_em", { ascending: true }),

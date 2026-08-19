@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/auth";
 
@@ -9,7 +9,7 @@ export async function POST(
   const s = createClient();
   const {
     data: { user },
-  } = await s.auth.getUser();
+  } = await getAuthUser(s);
   if (!user)
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   const body = await req.json();

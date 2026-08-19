@@ -16,7 +16,7 @@ import {
   STATUS_LABEL,
   TipoServico,
 } from "@/lib/os";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 export default async function OSDetalhePage({
   params,
@@ -36,7 +36,7 @@ export default async function OSDetalhePage({
       .select("*, tecnico:tecnico_id(nome), observacoes_os(criado_em)")
       .eq("id", params.id)
       .single(),
-    s.auth.getUser(),
+    getAuthUser(s),
     s.from("profiles")
       .select("id,nome")
       .eq("papel", "tecnico")

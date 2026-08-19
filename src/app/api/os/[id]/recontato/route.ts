@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdminUser } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 const STATUS_ABERTOS = ["pendente", "aguardando_retorno", "reagendar"];
 
@@ -11,7 +11,7 @@ export async function POST(
   const s = createClient();
   const {
     data: { user },
-  } = await s.auth.getUser();
+  } = await getAuthUser(s);
   if (!user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

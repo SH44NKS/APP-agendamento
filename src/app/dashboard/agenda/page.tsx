@@ -4,11 +4,11 @@ import { AgendaOperacional } from "@/components/AgendaOperacional";
 import { PainelDestaque } from "@/components/PainelDestaque";
 import { isAdminUser } from "@/lib/auth";
 import { OrdemServico } from "@/lib/os";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 export default async function AgendaPage() {
   const s = createClient();
-  const { data: auth } = await s.auth.getUser();
+  const { data: auth } = await getAuthUser(s);
   const { data: perfil } = await s
     .from("profiles")
     .select("papel")

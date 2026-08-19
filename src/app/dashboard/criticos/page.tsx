@@ -4,7 +4,7 @@ import { CriticosPorTecnico } from "@/components/CriticosPorTecnico";
 import { PainelDestaque } from "@/components/PainelDestaque";
 import { isAdminUser } from "@/lib/auth";
 import { diasPendente, diasSemMovimento, OrdemServico } from "@/lib/os";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 const STATUS_ABERTOS = ["pendente", "aguardando_retorno", "reagendar"];
 
@@ -12,7 +12,7 @@ export default async function CriticosPage() {
   const s = createClient();
   const {
     data: { user },
-  } = await s.auth.getUser();
+  } = await getAuthUser(s);
   if (!user) redirect("/login");
 
   const [{ data: perfil }, { data: ordens }, { data: config }] =

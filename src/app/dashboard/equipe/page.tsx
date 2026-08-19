@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { EquipeManager } from "@/components/EquipeManager";
 import { isAdminUser } from "@/lib/auth";
 export default async function EquipePage() {
   const s = createClient();
-  const { data: auth } = await s.auth.getUser();
+  const { data: auth } = await getAuthUser(s);
   const [{ data: perfil }, { data: pessoas }] = await Promise.all([
     s.from("profiles").select("papel").eq("id", auth.user?.id).maybeSingle(),
     s

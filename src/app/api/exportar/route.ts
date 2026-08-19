@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { TIPO_LABEL } from "@/lib/os";
 import { isAdminUser } from "@/lib/auth";
 const q = (v: unknown) => `"${String(v ?? "").replaceAll('"', '""')}"`;
@@ -6,7 +6,7 @@ export async function GET() {
   const s = createClient();
   const {
     data: { user },
-  } = await s.auth.getUser();
+  } = await getAuthUser(s);
   if (!user) return new Response("Não autenticado", { status: 401 });
   const { data: p } = await s
     .from("profiles")

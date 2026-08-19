@@ -5,13 +5,13 @@ import { PainelDestaque } from "@/components/PainelDestaque";
 import { ServicoDestaque } from "@/components/ServicoDestaque";
 import { isAdminUser } from "@/lib/auth";
 import { TipoServico } from "@/lib/os";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 export default async function FinalizacaoPage() {
   const s = createClient();
   const {
     data: { user },
-  } = await s.auth.getUser();
+  } = await getAuthUser(s);
   const { data: perfil } = await s
     .from("profiles")
     .select("papel")

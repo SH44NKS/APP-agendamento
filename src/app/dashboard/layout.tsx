@@ -1,5 +1,5 @@
 import { DashboardShell } from "@/components/DashboardShell";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 
 export default async function DashboardLayout({
@@ -10,7 +10,7 @@ export default async function DashboardLayout({
   const s = createClient();
   const {
     data: { user },
-  } = await s.auth.getUser();
+  } = await getAuthUser(s);
   const { data: perfil } = await s
     .from("profiles")
     .select("nome,papel")

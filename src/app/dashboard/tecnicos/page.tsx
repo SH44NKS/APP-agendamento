@@ -1,7 +1,7 @@
 import { differenceInHours } from "date-fns";
 import { CalendarDays } from "lucide-react";
 import { PainelDestaque } from "@/components/PainelDestaque";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { chaveMesBahia, FUSO_SISTEMA } from "@/lib/datetime";
 
@@ -19,7 +19,7 @@ export default async function TecnicosPage() {
   const s = createClient();
   const {
     data: { user },
-  } = await s.auth.getUser();
+  } = await getAuthUser(s);
   const { data: perfil } = await s
     .from("profiles")
     .select("id,nome,email,papel,ativo")

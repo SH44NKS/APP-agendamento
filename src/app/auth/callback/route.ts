@@ -10,16 +10,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?erro=sessao`);
   }
 
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-  if (exchangeError) {
-    return NextResponse.redirect(`${origin}/login?erro=sessao`);
-  }
-
   const {
     data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) {
+    error: exchangeError,
+  } = await supabase.auth.exchangeCodeForSession(code);
+  if (exchangeError || !user) {
     return NextResponse.redirect(`${origin}/login?erro=sessao`);
   }
 

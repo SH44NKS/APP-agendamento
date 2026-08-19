@@ -15,7 +15,7 @@ import { PainelDestaque, TemaPainel } from "@/components/PainelDestaque";
 import { RefreshDashboardButton } from "@/components/RefreshDashboardButton";
 import { isAdminUser } from "@/lib/auth";
 import { diasSemMovimento, OrdemServico } from "@/lib/os";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 type Filtros = {
   busca?: string;
@@ -68,7 +68,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       )
       .is("visto_admin_em", null)
       .order("criado_em", { ascending: false }),
-    s.auth.getUser(),
+    getAuthUser(s),
   ]);
 
   const { data: perfil } = await s

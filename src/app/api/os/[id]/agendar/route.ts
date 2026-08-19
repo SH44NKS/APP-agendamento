@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 function normalizarData(data: unknown) {
   if (typeof data !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return null;
@@ -18,7 +18,7 @@ export async function POST(
   }
 
   const s = createClient();
-  const { data: { user } } = await s.auth.getUser();
+  const { data: { user } } = await getAuthUser(s);
   if (!user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }

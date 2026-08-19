@@ -4,7 +4,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { OSCard } from "@/components/OSCard";
 import { PainelDestaque } from "@/components/PainelDestaque";
 import { diasSemMovimento, OrdemServico, STATUS_LABEL } from "@/lib/os";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthUser } from "@/lib/supabase/server";
 
 type Filtros = { busca?: string; status?: string };
 
@@ -13,7 +13,7 @@ const STATUS_ABERTOS = ["pendente", "aguardando_retorno", "reagendar"];
 
 export default async function TecnicoPage({ searchParams }: { searchParams: Filtros }) {
   const s = createClient();
-  const { data: { user } } = await s.auth.getUser();
+  const { data: { user } } = await getAuthUser(s);
   const [{ data: ordens }, { data: perfil }, { data: config }] = await Promise.all([
     s
       .from("ordens_servico")
