@@ -4,6 +4,7 @@ import {
   CalendarCheck2,
   ClipboardCheck,
   ClipboardList,
+  ChevronRight,
   Clock3,
   Flame,
   ListFilter,
@@ -23,6 +24,7 @@ type Filtros = {
   tipo?: string;
   tecnico?: string;
   prioridade?: string;
+  resumo?: string;
 };
 
 type Alerta = {
@@ -91,6 +93,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   const termo = (searchParams.busca ?? "").toLocaleLowerCase("pt-BR");
   const statusSelecionado = searchParams.status ?? "pendente";
   const tipoSelecionado = searchParams.tipo ?? "todos";
+  const resumoSelecionado = searchParams.resumo;
 
   const filtradas = todas.filter(
     (ordem) =>
@@ -106,7 +109,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
         (statusSelecionado === "finalizado" && ordem.status === "concluido")) &&
       (tipoSelecionado === "todos" || ordem.tipo === tipoSelecionado) &&
       (!searchParams.tecnico || ordem.tecnico_id === searchParams.tecnico) &&
-      (!searchParams.prioridade || ordem.prioridade === searchParams.prioridade),
+      (!searchParams.prioridade || ordem.prioridade === searchParams.prioridade) &&
+      correspondeResumo(ordem, resumoSelecionado, vermelho),
   );
 
   const lista = [...filtradas].sort(
@@ -121,12 +125,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   const altas = todas.filter(
     (ordem) => ordem.prioridade === "alta" && !STATUS_ENCERRADOS.includes(ordem.status),
   );
-  const altasFiltradas = lista.filter(
-    (ordem) => ordem.prioridade === "alta" && !STATUS_ENCERRADOS.includes(ordem.status),
-  );
-  const ordensRegulares = lista.filter(
-    (ordem) => ordem.prioridade !== "alta" || STATUS_ENCERRADOS.includes(ordem.status),
-  );
+  const altasFiltradas = resumoSelecionado
+    ? []
+    : lista.filter(
+        (ordem) =>
+          ordem.prioridade === "alta" &&
+          !STATUS_ENCERRADOS.includes(ordem.status),
+      );
+  const ordensRegulares = resumoSelecionado
+    ? lista
+    : lista.filter(
+        (ordem) =>
+          ordem.prioridade !== "alta" ||
+          STATUS_ENCERRADOS.includes(ordem.status),
+      );
   const baseDoTipo = todas.filter(
     (ordem) =>
       statusSelecionado === "todos" ||
@@ -171,12 +183,20 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
 
       {chamados.length > 0 && (
         <section className="mt-7 rounded-xl border border-amber bg-amber/10 p-4">
-          <div className="flex items-start gap-2">
-            <BellRing size={18} className="mt-0.5 shrink-0 text-amber-dark" />
-            <h2 className="text-sm font-extrabold leading-5">
-              {chamados.length} observação(ões) aguardando conferência
-            </h2>
-          </div>
+          <Link
+            href="/dashboard/pendencias#observacoes"
+            className="flex items-center justify-between gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
+          >
+            <span className="flex min-w-0 items-start gap-2">
+              <BellRing size={18} className="mt-0.5 shrink-0 text-amber-dark" />
+              <span className="break-words text-sm font-extrabold leading-5">
+                {chamados.length} observação(ões) aguardando conferência
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-amber-dark">
+              Ver todas <ChevronRight size={15} aria-hidden="true" />
+            </span>
+          </Link>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {chamados.slice(0, 6).map((alerta) => (
               <Link
@@ -197,11 +217,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       )}
 
       <section className="mt-7 grid grid-cols-2 gap-3 xl:grid-cols-5">
-        <Resumo Icone={Siren} tema="vermelho" label="Prioridade alta" valor={altas.length} detalhe="atendimento prioritário" />
-        <Resumo Icone={Clock3} tema="amarelo" label="Aguardando/reagendar" valor={pendentes.length} detalhe="aguardando contato" />
-        <Resumo Icone={CalendarCheck2} tema="azul" label="Agendadas" valor={agendadas.length} detalhe="com data definida" />
-        <Resumo Icone={ClipboardCheck} tema="verde" label="Concluídas" valor={concluidas.length} detalhe="aguardando conferência" />
-        <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`sem movimento por mais de ${vermelho} dias`} href="/dashboard/criticos" />
+        <Resumo Icone={Siren} tema="vermelho" label="Prioridade alta" valor={altas.length} detalhe="atendimento prioritário" href={hrefResumo("prioridade_alta")} />
+        <Resumo Icone={Clock3} tema="amarelo" label="Aguardando/reagendar" valor={pendentes.length} detalhe="aguardando contato" href={hrefResumo("pendencias")} />
+        <Resumo Icone={CalendarCheck2} tema="azul" label="Agendadas" valor={agendadas.length} detalhe="com data definida" href={hrefResumo("agendadas")} />
+        <Resumo Icone={ClipboardCheck} tema="verde" label="Concluídas" valor={concluidas.length} detalhe="aguardando conferência" href={hrefResumo("concluidas")} />
+        <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`sem movimento por mais de ${vermelho} dias`} href={hrefResumo("criticas")} />
       </section>
 
       <section className="mt-7 rounded-xl border border-base-border bg-white p-4 shadow-[0_10px_30px_rgba(17,24,39,.06)]">
@@ -253,9 +273,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       )}
 
       <PainelDestaque
+        id="lista-ordens"
         Icone={ClipboardList}
         titulo="Ordens de serviço"
-        descricao="Lista operacional conforme os filtros selecionados"
+        descricao={
+          resumoSelecionado
+            ? `Lista: ${labelResumo(resumoSelecionado)}`
+            : "Lista operacional conforme os filtros selecionados"
+        }
         contador={ordensRegulares.length}
         tema="neutro"
         className="mt-9"
@@ -451,6 +476,46 @@ function Filtro({
 function hrefRapido(status: string, tipo: string) {
   const params = new URLSearchParams({ status, tipo });
   return `/dashboard?${params.toString()}`;
+}
+
+function hrefResumo(resumo: string) {
+  const params = new URLSearchParams({ resumo, status: "todos", tipo: "todos" });
+  return `/dashboard?${params.toString()}#lista-ordens`;
+}
+
+function correspondeResumo(
+  ordem: OrdemServico,
+  resumo: string | undefined,
+  vermelho: number,
+) {
+  if (!resumo) return true;
+  if (resumo === "prioridade_alta") {
+    return (
+      ordem.prioridade === "alta" &&
+      !STATUS_ENCERRADOS.includes(ordem.status)
+    );
+  }
+  if (resumo === "pendencias") return STATUS_PENDENTES.includes(ordem.status);
+  if (resumo === "agendadas") return ordem.status === "agendado";
+  if (resumo === "concluidas") return ordem.status === "concluido_tecnico";
+  if (resumo === "criticas") {
+    return (
+      STATUS_PENDENTES.includes(ordem.status) &&
+      diasSemMovimento(ordem) > vermelho
+    );
+  }
+  return true;
+}
+
+function labelResumo(resumo: string) {
+  const labels: Record<string, string> = {
+    prioridade_alta: "Prioridade alta",
+    pendencias: "Aguardando/reagendar",
+    agendadas: "Agendadas",
+    concluidas: "Concluídas pelo técnico",
+    criticas: "Críticas",
+  };
+  return labels[resumo] ?? "Ordens de serviço";
 }
 
 function classeTipoAtivo(tipo: string) {

@@ -124,6 +124,7 @@ export default async function PendenciasPage() {
           contador={observacoesAbertas.length}
           tema="laranja"
           className="xl:col-span-2"
+          id="observacoes"
         >
           <div className="grid gap-2 sm:grid-cols-2">
             {observacoesAbertas.map((o) => (
@@ -135,7 +136,7 @@ export default async function PendenciasPage() {
                 <b className="break-words">
                   {o.os?.cliente_nome} · {o.os?.veiculo_identificador}
                 </b>
-                <span className="mt-1 block truncate text-ink-muted">
+                <span className="mt-1 block break-words leading-5 text-ink-muted">
                   {o.autor?.nome}: {o.texto}
                 </span>
               </Link>

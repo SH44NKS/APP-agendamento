@@ -78,6 +78,7 @@ export function PainelDestaque({
   children,
   className = "",
   conteudoClassName = "p-4 sm:p-5",
+  id,
 }: {
   Icone: LucideIcon;
   titulo: string;
@@ -87,11 +88,13 @@ export function PainelDestaque({
   children?: React.ReactNode;
   className?: string;
   conteudoClassName?: string;
+  id?: string;
 }) {
   const visual = TEMAS[tema];
 
   return (
     <section
+      id={id}
       className={`overflow-hidden rounded-2xl border bg-white shadow-[0_10px_30px_rgba(17,24,39,.06)] ${visual.borda} ${className}`}
     >
       <header
