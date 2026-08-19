@@ -19,10 +19,19 @@ export function createClient() {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Server Components não podem escrever cookies. O middleware
+            // atualiza a sessão antes de renderizar as páginas protegidas.
+          }
         },
         remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: "", ...options });
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch {
+            // A remoção será aplicada pelo middleware ou por uma Route Handler.
+          }
         },
       },
     }
