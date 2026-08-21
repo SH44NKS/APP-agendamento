@@ -86,6 +86,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       alerta.autor_id !== user?.id &&
       alerta.autor?.papel !== "admin" &&
       !STATUS_ENCERRADOS.includes(alerta.os?.status ?? ""),
+  ).filter(
+    (alerta, indice, lista) =>
+      lista.findIndex((item) => item.os_id === alerta.os_id) === indice,
   );
   const amarelo = config?.alerta_amarelo_dias ?? 3;
   const vermelho = config?.alerta_vermelho_dias ?? 7;
