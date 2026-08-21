@@ -17,8 +17,9 @@ import { createClient, getAuthUser } from "@/lib/supabase/server";
 type Alerta = {
   id: string;
   os_id: string;
+  autor_id: string;
   texto: string;
-  autor?: { nome: string } | null;
+  autor?: { nome: string; papel?: string } | null;
   os?: {
     cliente_nome: string;
     veiculo_identificador: string;
@@ -38,7 +39,7 @@ export default async function PendenciasPage() {
         .order("criado_em", { ascending: true }),
       s.from("observacoes_os")
         .select(
-          "id,os_id,texto,autor:autor_id(nome),os:os_id(cliente_nome,veiculo_identificador,status)",
+          "id,os_id,autor_id,texto,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,status)",
         )
         .is("visto_admin_em", null)
         .order("criado_em", { ascending: false }),
@@ -68,6 +69,8 @@ export default async function PendenciasPage() {
   const concluir = lista.filter((o) => o.status === "concluido_tecnico");
   const observacoesAbertas = ((observacoes ?? []) as unknown as Alerta[]).filter(
     (observacao) =>
+      observacao.autor_id !== auth.user?.id &&
+      observacao.autor?.papel !== "admin" &&
       !STATUS_ENCERRADOS.includes(observacao.os?.status ?? ""),
   );
   const motivos = Object.entries(MOTIVO_LABEL)
