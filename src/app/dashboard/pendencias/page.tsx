@@ -72,6 +72,9 @@ export default async function PendenciasPage() {
       observacao.autor_id !== auth.user?.id &&
       observacao.autor?.papel !== "admin" &&
       !STATUS_ENCERRADOS.includes(observacao.os?.status ?? ""),
+  ).filter(
+    (observacao, indice, lista) =>
+      lista.findIndex((item) => item.os_id === observacao.os_id) === indice,
   );
   const motivos = Object.entries(MOTIVO_LABEL)
     .map(([id, label]) => ({
@@ -123,7 +126,7 @@ export default async function PendenciasPage() {
         <PainelDestaque
           Icone={BellRing}
           titulo="Observações não visualizadas"
-          descricao="Chamados enviados pelos técnicos"
+          descricao="Última mensagem pendente de cada OS"
           contador={observacoesAbertas.length}
           tema="laranja"
           className="xl:col-span-2"
