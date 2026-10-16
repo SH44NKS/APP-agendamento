@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { importarTextoOS } from "@/lib/importar-os";
 import { STATUS_LABEL } from "@/lib/os";
-import { AlertTriangle, ExternalLink, FileUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, FileUp } from "lucide-react";
 import { extrairTextoPDF } from "@/lib/extrair-pdf";
 const vazio = {
   tipo: "instalacao",
@@ -26,6 +26,7 @@ export default function NovaOSPage() {
     [pdfNome, setPdfNome] = useState(""),
     [lendoPdf, setLendoPdf] = useState(false),
     [enviando, setEnviando] = useState(false),
+    [criada, setCriada] = useState(false),
     [erro, setErro] = useState(""),
     [duplicada, setDuplicada] = useState<{
       id: string;
@@ -120,18 +121,27 @@ export default function NovaOSPage() {
       setDuplicada(existente);
       return;
     }
-    const { data, error } = await supabase
-      .from("ordens_servico")
-      .insert(form)
-      .select()
-      .single();
+    const { error } = await supabase.from("ordens_servico").insert(form);
     setEnviando(false);
     if (error) {
       setErro(error.message);
       return;
     }
-    router.push(`/os/${data.id}`);
+    setForm(vazio);
+    setTexto("");
+    setPdfNome("");
+    setDuplicada(null);
+    setCriada(true);
   }
+  if (criada) return (
+    <main className="min-h-screen bg-base-bg px-4 py-8"><div className="mx-auto max-w-xl rounded-xl border border-base-border bg-white p-6 text-center shadow-[0_10px_30px_rgba(17,24,39,.06)]">
+      <CheckCircle2 size={38} className="mx-auto text-emerald-600" />
+      <h1 className="mt-3 text-xl font-bold">Lançamento criado com sucesso</h1>
+      <p className="mt-2 text-sm text-ink-muted">A ordem foi registrada e atribuída ao técnico selecionado.</p>
+      <button type="button" onClick={()=>setCriada(false)} className="btn-primary mt-6 w-full">Fazer novo lançamento</button>
+      <button type="button" onClick={()=>router.back()} className="mt-4 text-xs text-ink-muted hover:text-ink">Voltar</button>
+    </div></main>
+  );
   return (
     <main className="min-h-screen bg-base-bg px-4 py-8">
       <div className="mx-auto max-w-3xl">
