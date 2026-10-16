@@ -27,6 +27,7 @@ export default function NovaOSPage() {
     [lendoPdf, setLendoPdf] = useState(false),
     [enviando, setEnviando] = useState(false),
     [criada, setCriada] = useState(false),
+    [resumoCriado, setResumoCriado] = useState<(typeof vazio & { tecnico_nome: string }) | null>(null),
     [erro, setErro] = useState(""),
     [duplicada, setDuplicada] = useState<{
       id: string;
@@ -127,6 +128,10 @@ export default function NovaOSPage() {
       setErro(error.message);
       return;
     }
+    setResumoCriado({
+      ...form,
+      tecnico_nome: tecnicos.find((tecnico) => tecnico.id === form.tecnico_id)?.nome ?? "Técnico selecionado",
+    });
     setForm(vazio);
     setTexto("");
     setPdfNome("");
@@ -138,6 +143,18 @@ export default function NovaOSPage() {
       <CheckCircle2 size={38} className="mx-auto text-emerald-600" />
       <h1 className="mt-3 text-xl font-bold">Lançamento criado com sucesso</h1>
       <p className="mt-2 text-sm text-ink-muted">A ordem foi registrada e atribuída ao técnico selecionado.</p>
+      {resumoCriado && <div className="mt-5 rounded-xl border border-base-border bg-base-surface2 p-4 text-left text-sm">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">Resumo do lançamento</p>
+        <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Resumo label="Serviço" valor={resumoCriado.tipo === "instalacao" ? "Instalação" : resumoCriado.tipo === "retirada" ? "Retirada" : "Manutenção"} />
+          <Resumo label="Técnico" valor={resumoCriado.tecnico_nome} />
+          <Resumo label="Cliente" valor={resumoCriado.cliente_nome} />
+          <Resumo label="Veículo" valor={`${resumoCriado.veiculo_modelo} · ${resumoCriado.veiculo_identificador}`} />
+          <Resumo label="Local" valor={resumoCriado.local} />
+          <Resumo label="Consultor" valor={resumoCriado.consultor_nome} />
+          {resumoCriado.observacoes && <Resumo label="Observações" valor={resumoCriado.observacoes} />}
+        </dl>
+      </div>}
       <button type="button" onClick={()=>setCriada(false)} className="btn-primary mt-6 w-full">Fazer novo lançamento</button>
       <button type="button" onClick={()=>router.back()} className="mt-4 text-xs text-ink-muted hover:text-ink">Voltar</button>
     </div></main>
@@ -310,6 +327,9 @@ export default function NovaOSPage() {
       </div>
     </main>
   );
+}
+function Resumo({ label, valor }: { label: string; valor: string }) {
+  return <div><dt className="text-[10px] uppercase tracking-wider text-ink-faint">{label}</dt><dd className="mt-1 font-medium text-ink">{valor}</dd></div>;
 }
 function Campo({
   label,
