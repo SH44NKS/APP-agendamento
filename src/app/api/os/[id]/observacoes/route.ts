@@ -4,8 +4,16 @@ import {isAdminUser} from "@/lib/auth";
 
 export async function POST(req:Request,{params}:{params:{id:string}}){
   const s=createClient();const{data:{user}}=await getAuthUser(s);if(!user)return NextResponse.json({error:"Não autenticado"},{status:401});
-  const{texto}=await req.json();if(!texto?.trim())return NextResponse.json({error:"Escreva uma observação"},{status:400});
-  const{error}=await s.from("observacoes_os").insert({os_id:params.id,autor_id:user.id,texto:texto.trim()});if(error)return NextResponse.json({error:error.message},{status:400});return NextResponse.json({ok:true});
+  const{texto,chamadoOrigemId}=await req.json();if(!texto?.trim())return NextResponse.json({error:"Escreva uma observação"},{status:400});
+  const{data:p}=await s.from("profiles").select("papel").eq("id",user.id).maybeSingle();const isAdmin=isAdminUser(user.email,p?.papel);
+  if(chamadoOrigemId){
+    if(!isAdmin)return NextResponse.json({error:"Somente a administração pode responder a um chamado."},{status:403});
+    const{data:origem}=await s.from("observacoes_os").select("id,os_id,autor_id").eq("id",chamadoOrigemId).maybeSingle();
+    if(!origem||origem.os_id!==params.id)return NextResponse.json({error:"Este chamado não pode receber resposta."},{status:400});
+    const{data:autor}=await s.from("profiles").select("papel").eq("id",origem.autor_id).maybeSingle();
+    if(autor?.papel!=="tecnico")return NextResponse.json({error:"Este chamado não pode receber resposta."},{status:400});
+  }
+  const{error}=await s.from("observacoes_os").insert({os_id:params.id,autor_id:user.id,texto:texto.trim(),chamado_origem_id:chamadoOrigemId??null});if(error)return NextResponse.json({error:error.message},{status:400});return NextResponse.json({ok:true});
 }
 
 export async function PATCH(_req:Request,{params}:{params:{id:string}}){
