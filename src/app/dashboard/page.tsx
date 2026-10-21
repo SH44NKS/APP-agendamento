@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { OSCard } from "@/components/OSCard";
+import { BuscaOrdens } from "@/components/BuscaOrdens";
 import { PainelDestaque, TemaPainel } from "@/components/PainelDestaque";
 import { RefreshDashboardButton } from "@/components/RefreshDashboardButton";
 import { isAdminUser } from "@/lib/auth";
@@ -233,24 +234,14 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           </a>
         </div>
 
-        <form className="filter-bar">
-          <input
-            name="busca"
-            defaultValue={searchParams.busca}
-            placeholder="Buscar cliente, veículo, placa, chassi, local ou consultor..."
-            className="campo sm:col-span-2 xl:col-span-5"
-          />
-          <button className="btn-secondary" type="submit">Buscar</button>
-          <details className="sm:col-span-2 xl:col-span-6" open={Boolean((searchParams.status && searchParams.status !== "todos") || (searchParams.tipo && searchParams.tipo !== "todos") || searchParams.prioridade || searchParams.tecnico)}>
-            <summary className="cursor-pointer text-xs font-bold text-ink-muted hover:text-ink">Filtros opcionais</summary>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <Filtro name="status" value={statusSelecionado} allValue="todos" label="Todos os status" items={[["pendente", "Pendente"], ["aguardando_retorno", "Aguardando retorno"], ["agendado", "Agendado"], ["reagendar", "Reagendar"], ["concluido", "Concluído"], ["concluido_tecnico", "Concluído técnico"], ["finalizado", "Finalizado"]]} />
-              <Filtro name="tipo" value={tipoSelecionado} allValue="todos" label="Todos os serviços" items={[["instalacao", "Instalação"], ["retirada", "Retirada"], ["manutencao", "Manutenção"]]} />
-              <Filtro name="prioridade" value={searchParams.prioridade} label="Toda prioridade" items={[["alta", "Alta"], ["padrao", "Padrão"]]} />
-              <select name="tecnico" defaultValue={searchParams.tecnico ?? ""} className="campo"><option value="">Todos os técnicos</option>{tecnicos?.map((tecnico) => <option key={tecnico.id} value={tecnico.id}>{tecnico.nome}</option>)}</select>
-            </div>
-          </details>
-        </form>
+        <BuscaOrdens
+          busca={searchParams.busca}
+          status={statusSelecionado}
+          tipo={tipoSelecionado}
+          prioridade={searchParams.prioridade}
+          tecnico={searchParams.tecnico}
+          tecnicos={tecnicos ?? []}
+        />
 
         <div className="card-grid mt-5">
           {ordensRegulares.map((ordem) => (
@@ -347,31 +338,6 @@ function Resumo({
     </Link>
   ) : (
     conteudo
-  );
-}
-
-function Filtro({
-  name,
-  value,
-  label,
-  items,
-  allValue = "",
-}: {
-  name: string;
-  value?: string;
-  label: string;
-  items: string[][];
-  allValue?: string;
-}) {
-  return (
-    <select name={name} defaultValue={value ?? ""} className="campo">
-      <option value={allValue}>{label}</option>
-      {items.map(([itemValue, itemLabel]) => (
-        <option key={itemValue} value={itemValue}>
-          {itemLabel}
-        </option>
-      ))}
-    </select>
   );
 }
 
