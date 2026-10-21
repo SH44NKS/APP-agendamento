@@ -34,6 +34,10 @@ export default function NovaOSPage() {
       status: string;
       cliente_nome: string;
       veiculo_identificador: string;
+      finalizado_em: string | null;
+      concluido_em: string | null;
+      criado_em: string;
+      recente: boolean;
     } | null>(null);
   useEffect(() => {
     createClient()
@@ -89,7 +93,7 @@ export default function NovaOSPage() {
   }
   const normalizarIdentificador = (valor: string) =>
     valor.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  async function salvar() {
+  async function salvar(confirmarOSRecente = false) {
     setErro("");
     if (
       !form.cliente_nome ||
@@ -105,21 +109,35 @@ export default function NovaOSPage() {
     setEnviando(true);
     const supabase = createClient();
     const identificador = normalizarIdentificador(form.veiculo_identificador);
-    const { data: abertas, error: erroConsulta } = await supabase
+    const { data: existentes, error: erroConsulta } = await supabase
       .from("ordens_servico")
-      .select("id,status,cliente_nome,veiculo_identificador")
-      .not("status", "in", "(finalizado,concluido)");
+      .select("id,status,cliente_nome,veiculo_identificador,finalizado_em,concluido_em,criado_em");
     if (erroConsulta) {
       setEnviando(false);
       setErro(erroConsulta.message);
       return;
     }
-    const existente = abertas?.find(
+    const encontradas = existentes?.filter(
       (os) => normalizarIdentificador(os.veiculo_identificador) === identificador,
+    ) ?? [];
+    const existenteAberta = encontradas.find(
+      (os) => !["finalizado", "concluido", "cancelado"].includes(os.status),
     );
-    if (existente) {
+    if (existenteAberta) {
       setEnviando(false);
-      setDuplicada(existente);
+      setDuplicada({ ...existenteAberta, recente: false });
+      return;
+    }
+    const limiteRecente = new Date();
+    limiteRecente.setMonth(limiteRecente.getMonth() - 3);
+    const existenteRecente = encontradas.find((os) => {
+      if (!["finalizado", "concluido"].includes(os.status)) return false;
+      const dataFinalizacao = os.finalizado_em ?? os.concluido_em ?? os.criado_em;
+      return new Date(dataFinalizacao) >= limiteRecente;
+    });
+    if (existenteRecente && !confirmarOSRecente) {
+      setEnviando(false);
+      setDuplicada({ ...existenteRecente, recente: true });
       return;
     }
     const { error } = await supabase.from("ordens_servico").insert(form);
@@ -299,13 +317,11 @@ export default function NovaOSPage() {
                 <div className="flex items-start gap-3">
                   <AlertTriangle size={19} className="mt-0.5 shrink-0 text-amber-dark" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold">Esta OS já existe no sistema</p>
+                    <p className="text-sm font-bold">{duplicada.recente ? "Este veículo teve uma OS finalizada recentemente" : "Esta OS já existe no sistema"}</p>
                     <p className="mt-1 text-xs">
                       {duplicada.cliente_nome} · {duplicada.veiculo_identificador} · Status: <b>{STATUS_LABEL[duplicada.status] ?? duplicada.status}</b>
                     </p>
-                    <button type="button" onClick={() => router.push(`/os/${duplicada.id}`)} className="btn-secondary mt-3 border-amber-300 bg-white">
-                      <ExternalLink size={15} /> Ver OS existente
-                    </button>
+                    {duplicada.recente ? <><p className="mt-2 text-xs">Finalizada em {formatarData(duplicada.finalizado_em ?? duplicada.concluido_em ?? duplicada.criado_em)}. Confira antes de lançar uma nova OS.</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => salvar(true)} className="btn-primary">Criar nova OS mesmo assim</button><button type="button" onClick={() => setDuplicada(null)} className="btn-secondary border-amber-300 bg-white">Cancelar</button></div></> : <button type="button" onClick={() => router.push(`/os/${duplicada.id}`)} className="btn-secondary mt-3 border-amber-300 bg-white"><ExternalLink size={15} /> Ver OS existente</button>}
                   </div>
                 </div>
               </div>
@@ -316,7 +332,7 @@ export default function NovaOSPage() {
               </p>
             )}
             <button
-              onClick={salvar}
+              onClick={() => salvar()}
               disabled={enviando}
               className="btn-primary w-full"
             >
@@ -330,6 +346,9 @@ export default function NovaOSPage() {
 }
 function Resumo({ label, valor }: { label: string; valor: string }) {
   return <div><dt className="text-[10px] uppercase tracking-wider text-ink-faint">{label}</dt><dd className="mt-1 font-medium text-ink">{valor}</dd></div>;
+}
+function formatarData(valor: string) {
+  return new Intl.DateTimeFormat("pt-BR").format(new Date(valor));
 }
 function Campo({
   label,

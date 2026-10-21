@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Clock3,
   Flame,
-  ListFilter,
   Siren,
 } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -94,7 +93,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
   const vermelho = config?.alerta_vermelho_dias ?? 7;
   const todas = (ordens ?? []) as OrdemServico[];
   const termo = (searchParams.busca ?? "").toLocaleLowerCase("pt-BR");
-  const statusSelecionado = searchParams.status ?? "pendente";
+  const statusSelecionado = searchParams.status ?? "todos";
   const tipoSelecionado = searchParams.tipo ?? "todos";
   const resumoSelecionado = searchParams.resumo;
 
@@ -106,6 +105,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           ordem.veiculo_modelo,
           ordem.veiculo_identificador,
           ordem.local,
+          ordem.consultor_nome,
         ].some((valor) => valor.toLocaleLowerCase("pt-BR").includes(termo))) &&
       (statusSelecionado === "todos" ||
         ordem.status === statusSelecionado ||
@@ -142,27 +142,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           ordem.prioridade !== "alta" ||
           STATUS_ENCERRADOS.includes(ordem.status),
       );
-  const baseDoTipo = todas.filter(
-    (ordem) =>
-      statusSelecionado === "todos" ||
-      ordem.status === statusSelecionado ||
-      (statusSelecionado === "finalizado" && ordem.status === "concluido"),
-  );
-  const atalhosStatus = [
-    ["pendente", "Pendentes", todas.filter((ordem) => ordem.status === "pendente").length],
-    ["aguardando_retorno", "Aguardando retorno", todas.filter((ordem) => ordem.status === "aguardando_retorno").length],
-    ["agendado", "Agendadas", todas.filter((ordem) => ordem.status === "agendado").length],
-    ["reagendar", "Reagendar", todas.filter((ordem) => ordem.status === "reagendar").length],
-    ["concluido_tecnico", "Concluídas pelo técnico", todas.filter((ordem) => ordem.status === "concluido_tecnico").length],
-    ["finalizado", "Finalizadas", todas.filter((ordem) => ["finalizado", "concluido"].includes(ordem.status)).length],
-    ["todos", "Todas", todas.length],
-  ] as const;
-  const atalhosTipo = [
-    ["todos", "Todos os serviços", baseDoTipo.length],
-    ["instalacao", "Instalações", baseDoTipo.filter((ordem) => ordem.tipo === "instalacao").length],
-    ["manutencao", "Manutenções", baseDoTipo.filter((ordem) => ordem.tipo === "manutencao").length],
-    ["retirada", "Retiradas", baseDoTipo.filter((ordem) => ordem.tipo === "retirada").length],
-  ] as const;
 
   return (
     <div>
@@ -227,46 +206,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
         <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`sem movimento por mais de ${vermelho} dias`} href={hrefResumo("criticas")} />
       </section>
 
-      <section className="mt-7 rounded-xl border border-base-border bg-white p-4 shadow-[0_10px_30px_rgba(17,24,39,.06)]">
-        <div className="flex items-center gap-2">
-          <ListFilter size={17} className="shrink-0 text-amber-dark" />
-          <div>
-            <h2 className="text-sm font-extrabold">Acesso rápido</h2>
-            <p className="mt-0.5 text-xs text-ink-muted">Clique para trocar a lista exibida.</p>
-          </div>
-        </div>
-        <div className="mt-4">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-faint">Por status</p>
-          <div className="mobile-nav-scroll flex gap-2 overflow-x-auto pb-1">
-            {atalhosStatus.map(([id, label, total]) => (
-              <Link
-                key={id}
-                href={hrefRapido(id, tipoSelecionado)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${statusSelecionado === id ? classeStatusAtivo(id) : "border-base-border bg-white text-ink-muted hover:border-amber"}`}
-              >
-                {label}
-                <span className="rounded-full bg-base-surface2 px-2 py-0.5 font-mono text-[9px] font-bold text-ink-muted">{total}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-        <div className="mt-4 border-t border-base-border pt-4">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-ink-faint">Por serviço</p>
-          <div className="mobile-nav-scroll flex gap-2 overflow-x-auto pb-1">
-            {atalhosTipo.map(([id, label, total]) => (
-              <Link
-                key={id}
-                href={hrefRapido(statusSelecionado, id)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition ${tipoSelecionado === id ? classeTipoAtivo(id) : "border-base-border bg-white text-ink-muted hover:border-amber"}`}
-              >
-                {label}
-                <span className="rounded-full bg-white/70 px-2 py-0.5 font-mono text-[9px] font-bold">{total}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {altasFiltradas.length > 0 && (
         <BlocoPrioridade
           lista={altasFiltradas}
@@ -298,59 +237,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           <input
             name="busca"
             defaultValue={searchParams.busca}
-            placeholder="Buscar cliente, placa, chassi ou local..."
-            className="campo sm:col-span-2"
+            placeholder="Buscar cliente, veículo, placa, chassi, local ou consultor..."
+            className="campo sm:col-span-2 xl:col-span-5"
           />
-          <Filtro
-            name="status"
-            value={statusSelecionado}
-            allValue="todos"
-            label="Todos os status"
-            items={[
-              ["pendente", "Pendente"],
-              ["aguardando_retorno", "Aguardando retorno"],
-              ["agendado", "Agendado"],
-              ["reagendar", "Reagendar"],
-              ["concluido", "Concluído"],
-              ["concluido_tecnico", "Concluído técnico"],
-              ["finalizado", "Finalizado"],
-            ]}
-          />
-          <Filtro
-            name="tipo"
-            value={tipoSelecionado}
-            allValue="todos"
-            label="Todos os serviços"
-            items={[
-              ["instalacao", "Instalação"],
-              ["retirada", "Retirada"],
-              ["manutencao", "Manutenção"],
-            ]}
-          />
-          <Filtro
-            name="prioridade"
-            value={searchParams.prioridade}
-            label="Toda prioridade"
-            items={[
-              ["alta", "Alta"],
-              ["padrao", "Padrão"],
-            ]}
-          />
-          <select
-            name="tecnico"
-            defaultValue={searchParams.tecnico ?? ""}
-            className="campo"
-          >
-            <option value="">Todos os técnicos</option>
-            {tecnicos?.map((tecnico) => (
-              <option key={tecnico.id} value={tecnico.id}>
-                {tecnico.nome}
-              </option>
-            ))}
-          </select>
-          <button className="btn-secondary" type="submit">
-            Filtrar
-          </button>
+          <button className="btn-secondary" type="submit">Buscar</button>
+          <details className="sm:col-span-2 xl:col-span-6" open={Boolean((searchParams.status && searchParams.status !== "todos") || (searchParams.tipo && searchParams.tipo !== "todos") || searchParams.prioridade || searchParams.tecnico)}>
+            <summary className="cursor-pointer text-xs font-bold text-ink-muted hover:text-ink">Filtros opcionais</summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <Filtro name="status" value={statusSelecionado} allValue="todos" label="Todos os status" items={[["pendente", "Pendente"], ["aguardando_retorno", "Aguardando retorno"], ["agendado", "Agendado"], ["reagendar", "Reagendar"], ["concluido", "Concluído"], ["concluido_tecnico", "Concluído técnico"], ["finalizado", "Finalizado"]]} />
+              <Filtro name="tipo" value={tipoSelecionado} allValue="todos" label="Todos os serviços" items={[["instalacao", "Instalação"], ["retirada", "Retirada"], ["manutencao", "Manutenção"]]} />
+              <Filtro name="prioridade" value={searchParams.prioridade} label="Toda prioridade" items={[["alta", "Alta"], ["padrao", "Padrão"]]} />
+              <select name="tecnico" defaultValue={searchParams.tecnico ?? ""} className="campo"><option value="">Todos os técnicos</option>{tecnicos?.map((tecnico) => <option key={tecnico.id} value={tecnico.id}>{tecnico.nome}</option>)}</select>
+            </div>
+          </details>
         </form>
 
         <div className="card-grid mt-5">
@@ -476,11 +375,6 @@ function Filtro({
   );
 }
 
-function hrefRapido(status: string, tipo: string) {
-  const params = new URLSearchParams({ status, tipo });
-  return `/dashboard?${params.toString()}`;
-}
-
 function hrefResumo(resumo: string) {
   const params = new URLSearchParams({ resumo, status: "todos", tipo: "todos" });
   return `/dashboard?${params.toString()}#lista-ordens`;
@@ -519,21 +413,4 @@ function labelResumo(resumo: string) {
     criticas: "Críticas",
   };
   return labels[resumo] ?? "Ordens de serviço";
-}
-
-function classeTipoAtivo(tipo: string) {
-  if (tipo === "instalacao") return "border-emerald-300 bg-emerald-50 text-emerald-700";
-  if (tipo === "manutencao") return "border-amber bg-yellow-50 text-amber-dark";
-  if (tipo === "retirada") return "border-red-300 bg-red-50 text-red-700";
-  return "border-amber bg-amber/15 text-gray-900";
-}
-
-function classeStatusAtivo(status: string) {
-  if (status === "pendente") return "border-slate-300 bg-slate-100 text-slate-800";
-  if (status === "aguardando_retorno") return "border-yellow-300 bg-yellow-100 text-amber-dark";
-  if (status === "agendado") return "border-blue-300 bg-blue-100 text-blue-800";
-  if (status === "reagendar") return "border-orange-300 bg-orange-100 text-orange-800";
-  if (status === "concluido_tecnico") return "border-emerald-300 bg-emerald-100 text-emerald-800";
-  if (status === "finalizado") return "border-green-300 bg-green-100 text-green-800";
-  return "border-amber bg-amber/15 text-gray-900";
 }
