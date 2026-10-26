@@ -42,9 +42,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=SUA_CHAVE_ANON
 NEXT_PUBLIC_SITE_URL=https://SEU-DOMINIO.vercel.app
 GOOGLE_CLIENT_ID=SEU_CLIENT_ID
 GOOGLE_CLIENT_SECRET=SEU_CLIENT_SECRET
+SMARTGPS_API_HASH=SUA_CHAVE_PRIVADA_DA_TRACKER
 ```
 
 Não use a chave `service_role` no navegador. Depois de salvar as variáveis, faça um redeploy.
+
+`SMARTGPS_API_HASH` é usada apenas pela busca da Tracker ao criar uma OS. Cadastre-a como **Secret** na Vercel; ela nunca deve ter o prefixo `NEXT_PUBLIC_` nem ser incluída no GitHub.
 
 ## Desenvolvimento local
 

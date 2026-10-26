@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { importarTextoOS } from "@/lib/importar-os";
 import { STATUS_LABEL } from "@/lib/os";
-import { AlertTriangle, CheckCircle2, ExternalLink, FileUp } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, FileUp, Search } from "lucide-react";
 import { extrairTextoPDF } from "@/lib/extrair-pdf";
 const vazio = {
   tipo: "instalacao",
@@ -25,6 +25,11 @@ export default function NovaOSPage() {
     [texto, setTexto] = useState(""),
     [pdfNome, setPdfNome] = useState(""),
     [lendoPdf, setLendoPdf] = useState(false),
+    [consultaTracker, setConsultaTracker] = useState(""),
+    [buscandoTracker, setBuscandoTracker] = useState(false),
+    [resultadoTracker, setResultadoTracker] = useState<{
+      id: string; client: string; vehicleModel: string; plate: string; chassis: string; phone: string; location: string; consultant: string; service: string; status: string;
+    } | null>(null),
     [enviando, setEnviando] = useState(false),
     [criada, setCriada] = useState(false),
     [resumoCriado, setResumoCriado] = useState<(typeof vazio & { tecnico_nome: string }) | null>(null),
@@ -70,6 +75,43 @@ export default function NovaOSPage() {
   }
   function importar() {
     preencher(texto);
+  }
+  function usarDadosTracker() {
+    if (!resultadoTracker) return;
+    setForm((f) => ({
+      ...f,
+      tipo: resultadoTracker.service,
+      cliente_nome: resultadoTracker.client || f.cliente_nome,
+      veiculo_modelo: resultadoTracker.vehicleModel || f.veiculo_modelo,
+      veiculo_identificador: resultadoTracker.plate || resultadoTracker.chassis || f.veiculo_identificador,
+      telefone: resultadoTracker.phone || f.telefone,
+      local: resultadoTracker.location || f.local,
+      consultor_nome: resultadoTracker.consultant || f.consultor_nome,
+      tecnico_id: "",
+    }));
+    setDuplicada(null);
+    setErro("");
+  }
+  async function buscarNaTracker() {
+    const query = consultaTracker.trim();
+    if (!query) return;
+    setBuscandoTracker(true);
+    setResultadoTracker(null);
+    setErro("");
+    try {
+      const response = await fetch("/api/tracker/buscar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Não foi possível consultar a Tracker.");
+      setResultadoTracker(body.order);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível consultar a Tracker.");
+    } finally {
+      setBuscandoTracker(false);
+    }
   }
   async function importarPDF(arquivo?: File) {
     if (!arquivo) return;
@@ -188,6 +230,20 @@ export default function NovaOSPage() {
         </button>
         <p className="eyebrow mt-5">LANÇAMENTO RÁPIDO</p>
         <h1 className="mt-2 text-3xl font-bold">Nova ordem de serviço</h1>
+        <div className="mt-7 rounded-xl border border-base-border bg-white p-5">
+          <div className="flex items-start gap-3">
+            <Search size={20} className="mt-0.5 text-amber-dark" />
+            <div>
+              <h2 className="text-sm font-bold">Buscar OS diretamente na Tracker</h2>
+              <p className="mt-1 text-xs text-ink-muted">Informe o número da OS, a placa ou o chassi. Os dados encontrados preenchem o formulário, mas você ainda confere tudo e escolhe o técnico antes de salvar.</p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input className="campo flex-1" value={consultaTracker} onChange={(e) => setConsultaTracker(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); buscarNaTracker(); } }} placeholder="Ex.: 12345, ABC1D23 ou chassi" />
+            <button type="button" onClick={buscarNaTracker} disabled={buscandoTracker || !consultaTracker.trim()} className="btn-primary shrink-0"><Search size={16} />{buscandoTracker ? "Buscando..." : "Buscar na Tracker"}</button>
+          </div>
+          {resultadoTracker && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"><p className="font-bold">OS #{resultadoTracker.id} encontrada · {resultadoTracker.status || "status não informado"}</p><p className="mt-1 text-xs">{resultadoTracker.client || "Cliente não informado"} · {resultadoTracker.vehicleModel || "Modelo não informado"} · {resultadoTracker.plate || resultadoTracker.chassis || "Sem placa/chassi"}</p><button type="button" onClick={usarDadosTracker} className="btn-secondary mt-3 border-emerald-300 bg-white">Usar dados desta OS</button></div>}
+        </div>
         <div className="mt-7 rounded-xl border border-base-border bg-white p-5">
           <div className="flex items-start gap-3">
             <FileUp size={20} className="mt-0.5 text-amber-dark" />
