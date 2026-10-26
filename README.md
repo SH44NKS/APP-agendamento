@@ -48,7 +48,7 @@ POWERCRM_TOKEN_ESCUDO=TOKEN_PRIVADO_DO_CRM_ESCUDO
 
 Não use a chave `service_role` no navegador. Depois de salvar as variáveis, faça um redeploy.
 
-As variáveis `POWERCRM_TOKEN_FOCO` e `POWERCRM_TOKEN_ESCUDO` são usadas apenas pela busca CRM ao criar uma OS. Cadastre-as como **Secret** na Vercel; elas nunca devem ter o prefixo `NEXT_PUBLIC_` nem ser incluídas no GitHub.
+As variáveis `POWERCRM_TOKEN_FOCO` e `POWERCRM_TOKEN_ESCUDO` são usadas apenas pela busca CRM ao criar uma OS. Como alternativa, o APP também aceita a mesma ponte já usada pelo Sistema de Rastreamento A&O: defina `POWERCRM_BRIDGE_URL` e `POWERCRM_BRIDGE_SECRET`. Cadastre tokens e segredos como **Secret** na Vercel; eles nunca devem ter o prefixo `NEXT_PUBLIC_` nem ser incluídos no GitHub.
 
 ## Desenvolvimento local
 

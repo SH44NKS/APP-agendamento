@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHmac } from "node:crypto";
 import { isAdminUser } from "@/lib/auth";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 
@@ -54,18 +55,27 @@ function formFromQuote(value: unknown) {
 
 async function crmRead(companyName: Company, path: string, body?: Record<string, unknown>) {
   const token = companyName === "foco" ? process.env.POWERCRM_TOKEN_FOCO : process.env.POWERCRM_TOKEN_ESCUDO;
-  if (!token) throw new Error(`A integração CRM ${companyName.toUpperCase()} precisa ser configurada no servidor.`);
-  const url = new URL(`https://api.powercrm.com.br/api/${path}`);
+  const bridgeSecret = process.env.POWERCRM_BRIDGE_SECRET;
+  const bridgeUrl = process.env.POWERCRM_BRIDGE_URL || "https://controle-pendencias-foco-escudo.vercel.app/api/integrations/ao";
+  if (!token && !bridgeSecret) throw new Error(`A integração CRM ${companyName.toUpperCase()} precisa ser configurada no servidor.`);
   let response: Response;
   try {
-    response = await fetch(url, {
-      method: body ? "POST" : "GET",
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
-      ...(body ? { body: JSON.stringify(body) } : {}),
-      cache: "no-store",
-      redirect: "error",
-      signal: AbortSignal.timeout(20_000),
-    });
+    if (!token && bridgeSecret) {
+      const payload = JSON.stringify({ company: companyName, path, ...(body ? { body } : {}) });
+      const time = String(Date.now());
+      const signature = createHmac("sha256", bridgeSecret).update(`${time}\n${payload}`).digest("hex");
+      response = await fetch(bridgeUrl, { method: "POST", headers: { "Content-Type": "application/json", "x-ao-time": time, "x-ao-signature": signature }, body: payload, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(23_000) });
+    } else {
+      const url = new URL(`https://api.powercrm.com.br/api/${path}`);
+      response = await fetch(url, {
+        method: body ? "POST" : "GET",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+        cache: "no-store",
+        redirect: "error",
+        signal: AbortSignal.timeout(20_000),
+      });
+    }
   } catch {
     throw new Error("O CRM não respondeu a tempo. Tente novamente em instantes.");
   }
