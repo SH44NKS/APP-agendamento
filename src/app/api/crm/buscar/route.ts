@@ -34,23 +34,45 @@ function field(raw: Raw, ...keys: string[]) {
   return "";
 }
 
-function formFromQuote(value: unknown) {
+function fieldFrom(records: Raw[], ...keys: string[]) {
+  for (const record of records) {
+    const value = field(record, ...keys);
+    if (value) return value;
+  }
+  return "";
+}
+
+function formFromQuote(value: unknown, negotiation?: unknown) {
   const quote = object(value);
-  const client = object(quote.client);
+  const negotiationData = object(negotiation);
+  const client = { ...object(negotiationData.client), ...object(quote.client) };
+  const addressRecords = [
+    client,
+    quote,
+    negotiationData,
+    object(client.address),
+    object(quote.address),
+    object(negotiationData.address),
+  ];
+  const street = fieldFrom(addressRecords, "addressStreet", "addressAddress", "address", "street", "logradouro");
+  const number = fieldFrom(addressRecords, "addressNumber", "number", "numero");
+  const complement = fieldFrom(addressRecords, "addressComplement", "complement", "complemento");
+  const neighborhood = fieldFrom(addressRecords, "addressNeighborhood", "addressDistrict", "neighborhood", "district", "bairro");
+  const city = fieldFrom(addressRecords, "cityName", "city", "municipality", "cidade");
+  const state = fieldFrom(addressRecords, "stateAbbreviation", "state", "uf", "estado");
   return {
     cliente_nome: field(client, "fullName", "name") || field(quote, "name", "clientName"),
     veiculo_modelo: field(quote, "carModel", "model"),
     veiculo_identificador: field(quote, "plate", "plates", "plts").toUpperCase() || field(quote, "chassi", "chassis").toUpperCase(),
     telefone: field(client, "phoneMain", "phone", "mobilePhone", "cellPhone") || field(quote, "phoneMobile1", "phone"),
-    local: [
-      field(client, "addressStreet", "addressAddress", "address") || field(quote, "addressAddress"),
-      field(client, "addressNumber") || field(quote, "addressNumber"),
-      field(client, "addressNeighborhood") || field(quote, "addressNeighborhood"),
-      field(client, "cityName", "city") || field(quote, "cityName"),
-      field(client, "stateAbbreviation", "state") || field(quote, "stateAbbreviation"),
-    ].filter(Boolean).join(", "),
-    consultor_nome: field(quote, "consultantName", "responsibleSalesman"),
+    local: [street, number && `nº ${number}`, complement, neighborhood, city, state].filter(Boolean).join(" - "),
+    consultor_nome: field(quote, "consultantName", "responsibleSalesman") || field(negotiationData, "responsible", "responsibleSalesman"),
   };
+}
+
+function negotiationCode(quote: Raw) {
+  return field(quote, "negotiationCode", "negotiation_code", "cardId", "card_id", "negotiationId", "negotiation_id")
+    || field(object(quote.negotiation), "code", "id", "negotiationCode");
 }
 
 async function crmRead(companyName: Company, path: string, body?: Record<string, unknown>) {
@@ -134,7 +156,13 @@ export async function POST(request: Request) {
   try {
     if (input.action === "details") {
       if (!code(input.code)) throw new Error("Código da cotação inválido.");
-      return NextResponse.json({ data: formFromQuote(await crmRead(input.company, `quotation/${encodeURIComponent(text(input.code))}`)) }, { headers });
+      const quote = object(await crmRead(input.company, `quotation/${encodeURIComponent(text(input.code))}`));
+      const relatedNegotiation = negotiationCode(quote);
+      let negotiation: Raw = {};
+      if (code(relatedNegotiation)) {
+        try { negotiation = object(await crmRead(input.company, `negotiation/${encodeURIComponent(relatedNegotiation)}`)); } catch { /* A cotação continua utilizável mesmo sem os dados complementares. */ }
+      }
+      return NextResponse.json({ data: formFromQuote(quote, negotiation) }, { headers });
     }
     const query = normalize(input.query);
     if (query.length < 3 || query.length > 100) throw new Error("Digite pelo menos 3 letras ou números.");
