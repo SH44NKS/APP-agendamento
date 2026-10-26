@@ -42,12 +42,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=SUA_CHAVE_ANON
 NEXT_PUBLIC_SITE_URL=https://SEU-DOMINIO.vercel.app
 GOOGLE_CLIENT_ID=SEU_CLIENT_ID
 GOOGLE_CLIENT_SECRET=SEU_CLIENT_SECRET
-SMARTGPS_API_HASH=SUA_CHAVE_PRIVADA_DA_TRACKER
+POWERCRM_TOKEN_FOCO=TOKEN_PRIVADO_DO_CRM_FOCO
+POWERCRM_TOKEN_ESCUDO=TOKEN_PRIVADO_DO_CRM_ESCUDO
 ```
 
 Não use a chave `service_role` no navegador. Depois de salvar as variáveis, faça um redeploy.
 
-`SMARTGPS_API_HASH` é usada apenas pela busca da Tracker ao criar uma OS. Cadastre-a como **Secret** na Vercel; ela nunca deve ter o prefixo `NEXT_PUBLIC_` nem ser incluída no GitHub.
+As variáveis `POWERCRM_TOKEN_FOCO` e `POWERCRM_TOKEN_ESCUDO` são usadas apenas pela busca CRM ao criar uma OS. Cadastre-as como **Secret** na Vercel; elas nunca devem ter o prefixo `NEXT_PUBLIC_` nem ser incluídas no GitHub.
 
 ## Desenvolvimento local
 

@@ -25,11 +25,11 @@ export default function NovaOSPage() {
     [texto, setTexto] = useState(""),
     [pdfNome, setPdfNome] = useState(""),
     [lendoPdf, setLendoPdf] = useState(false),
-    [consultaTracker, setConsultaTracker] = useState(""),
-    [buscandoTracker, setBuscandoTracker] = useState(false),
-    [resultadoTracker, setResultadoTracker] = useState<{
-      id: string; client: string; vehicleModel: string; plate: string; chassis: string; phone: string; location: string; consultant: string; service: string; status: string;
-    } | null>(null),
+    [empresaCrm, setEmpresaCrm] = useState<"foco" | "escudo">("foco"),
+    [modoCrm, setModoCrm] = useState<"busca" | "id">("busca"),
+    [consultaCrm, setConsultaCrm] = useState(""),
+    [buscandoCrm, setBuscandoCrm] = useState(false),
+    [cotacoesCrm, setCotacoesCrm] = useState<{ code: string; name: string; plate: string; chassis: string; model: string; created_at: string }[]>([]),
     [enviando, setEnviando] = useState(false),
     [criada, setCriada] = useState(false),
     [resumoCriado, setResumoCriado] = useState<(typeof vazio & { tecnico_nome: string }) | null>(null),
@@ -76,41 +76,42 @@ export default function NovaOSPage() {
   function importar() {
     preencher(texto);
   }
-  function usarDadosTracker() {
-    if (!resultadoTracker) return;
-    setForm((f) => ({
-      ...f,
-      tipo: resultadoTracker.service,
-      cliente_nome: resultadoTracker.client || f.cliente_nome,
-      veiculo_modelo: resultadoTracker.vehicleModel || f.veiculo_modelo,
-      veiculo_identificador: resultadoTracker.plate || resultadoTracker.chassis || f.veiculo_identificador,
-      telefone: resultadoTracker.phone || f.telefone,
-      local: resultadoTracker.location || f.local,
-      consultor_nome: resultadoTracker.consultant || f.consultor_nome,
-      tecnico_id: "",
-    }));
-    setDuplicada(null);
-    setErro("");
-  }
-  async function buscarNaTracker() {
-    const query = consultaTracker.trim();
+  async function consultarCrm() {
+    const query = consultaCrm.trim();
     if (!query) return;
-    setBuscandoTracker(true);
-    setResultadoTracker(null);
+    setBuscandoCrm(true);
+    setCotacoesCrm([]);
     setErro("");
     try {
-      const response = await fetch("/api/tracker/buscar", {
+      const response = await fetch("/api/crm/buscar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ action: "search", company: empresaCrm, mode: modoCrm, query }),
       });
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "Não foi possível consultar a Tracker.");
-      setResultadoTracker(body.order);
+      if (!response.ok) throw new Error(body.error || "Não foi possível consultar o CRM.");
+      setCotacoesCrm(body.quotes || []);
+      if (body.message && !body.quotes?.length) setErro(body.message);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível consultar a Tracker.");
+      setErro(e instanceof Error ? e.message : "Não foi possível consultar o CRM.");
     } finally {
-      setBuscandoTracker(false);
+      setBuscandoCrm(false);
+    }
+  }
+  async function usarCotacaoCrm(codigo: string) {
+    setBuscandoCrm(true);
+    setErro("");
+    try {
+      const response = await fetch("/api/crm/buscar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "details", company: empresaCrm, code: codigo }) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Não foi possível carregar a cotação.");
+      const dados = body.data;
+      setForm((f) => ({ ...f, cliente_nome: dados.cliente_nome || f.cliente_nome, veiculo_modelo: dados.veiculo_modelo || f.veiculo_modelo, veiculo_identificador: dados.veiculo_identificador || f.veiculo_identificador, telefone: dados.telefone || f.telefone, local: dados.local || f.local, consultor_nome: dados.consultor_nome || f.consultor_nome, tecnico_id: "" }));
+      setDuplicada(null);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível carregar a cotação.");
+    } finally {
+      setBuscandoCrm(false);
     }
   }
   async function importarPDF(arquivo?: File) {
@@ -234,15 +235,17 @@ export default function NovaOSPage() {
           <div className="flex items-start gap-3">
             <Search size={20} className="mt-0.5 text-amber-dark" />
             <div>
-              <h2 className="text-sm font-bold">Buscar OS diretamente na Tracker</h2>
-              <p className="mt-1 text-xs text-ink-muted">Informe o número da OS, a placa ou o chassi. Os dados encontrados preenchem o formulário, mas você ainda confere tudo e escolhe o técnico antes de salvar.</p>
+              <h2 className="text-sm font-bold">Buscar dados no CRM</h2>
+              <p className="mt-1 text-xs text-ink-muted">Pesquise a cotação pelo nome, placa, CPF/CNPJ, chassi ou ID. Os dados só preenchem o formulário depois da sua escolha.</p>
             </div>
           </div>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <input className="campo flex-1" value={consultaTracker} onChange={(e) => setConsultaTracker(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); buscarNaTracker(); } }} placeholder="Ex.: 12345, ABC1D23 ou chassi" />
-            <button type="button" onClick={buscarNaTracker} disabled={buscandoTracker || !consultaTracker.trim()} className="btn-primary shrink-0"><Search size={16} />{buscandoTracker ? "Buscando..." : "Buscar na Tracker"}</button>
+          <div className="mt-4 grid gap-2 sm:grid-cols-4">
+            <select className="campo" value={empresaCrm} onChange={(e) => { setEmpresaCrm(e.target.value as "foco" | "escudo"); setCotacoesCrm([]); }}><option value="foco">CRM Foco</option><option value="escudo">CRM Escudo</option></select>
+            <select className="campo" value={modoCrm} onChange={(e) => { setModoCrm(e.target.value as "busca" | "id"); setCotacoesCrm([]); }}><option value="busca">Nome, placa, CPF ou chassi</option><option value="id">ID da cotação</option></select>
+            <input className="campo sm:col-span-2" value={consultaCrm} onChange={(e) => setConsultaCrm(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); consultarCrm(); } }} placeholder={modoCrm === "id" ? "Ex.: código da cotação" : "Ex.: PLD9I50, CPF, chassi ou nome"} />
           </div>
-          {resultadoTracker && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"><p className="font-bold">OS #{resultadoTracker.id} encontrada · {resultadoTracker.status || "status não informado"}</p><p className="mt-1 text-xs">{resultadoTracker.client || "Cliente não informado"} · {resultadoTracker.vehicleModel || "Modelo não informado"} · {resultadoTracker.plate || resultadoTracker.chassis || "Sem placa/chassi"}</p><button type="button" onClick={usarDadosTracker} className="btn-secondary mt-3 border-emerald-300 bg-white">Usar dados desta OS</button></div>}
+          <button type="button" onClick={consultarCrm} disabled={buscandoCrm || !consultaCrm.trim()} className="btn-primary mt-3"><Search size={16} />{buscandoCrm ? "Buscando..." : "Buscar no CRM"}</button>
+          {cotacoesCrm.length > 0 && <div className="mt-4 grid gap-3">{cotacoesCrm.map((cotacao) => <div key={cotacao.code} className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"><p className="font-bold">{cotacao.name || "Cliente não informado"}</p><p className="mt-1 text-xs">Cotação {cotacao.code} · {cotacao.plate || cotacao.chassis || "sem placa/chassi"}{cotacao.model ? ` · ${cotacao.model}` : ""}{cotacao.created_at ? ` · ${cotacao.created_at.slice(0, 10).split("-").reverse().join("/")}` : ""}</p><button type="button" onClick={() => usarCotacaoCrm(cotacao.code)} disabled={buscandoCrm} className="btn-secondary mt-3 border-emerald-300 bg-white">Usar dados desta cotação</button></div>)}</div>}
         </div>
         <div className="mt-7 rounded-xl border border-base-border bg-white p-5">
           <div className="flex items-start gap-3">
