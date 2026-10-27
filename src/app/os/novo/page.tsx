@@ -188,11 +188,22 @@ export default function NovaOSPage() {
       setDuplicada({ ...existenteRecente, recente: true });
       return;
     }
-    const { error } = await supabase.from("ordens_servico").insert(form);
+    const { data: osCriada, error } = await supabase
+      .from("ordens_servico")
+      .insert(form)
+      .select("id")
+      .single();
     setEnviando(false);
     if (error) {
       setErro(error.message);
       return;
+    }
+    if (osCriada?.id) {
+      void fetch("/api/notificacoes/push/enviar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ osId: osCriada.id }),
+      }).catch(() => undefined);
     }
     setResumoCriado({
       ...form,

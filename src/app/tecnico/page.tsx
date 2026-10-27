@@ -3,6 +3,7 @@ import { CalendarDays, ClipboardList, Flame, LogOut, Search, Siren } from "lucid
 import { LogoutButton } from "@/components/LogoutButton";
 import { OSCard } from "@/components/OSCard";
 import { PainelDestaque } from "@/components/PainelDestaque";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { diasSemMovimento, OrdemServico, STATUS_LABEL } from "@/lib/os";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 
@@ -86,6 +87,7 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
           </Link>
         </div>
         <p className="mt-2 text-sm text-ink-muted">As OS mais novas aparecem primeiro.</p>
+        <NotificationCenter />
 
         <form className="mt-5 grid gap-2 rounded-xl border border-base-border bg-white p-3">
           <div className="relative">
