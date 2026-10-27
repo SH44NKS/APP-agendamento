@@ -41,7 +41,6 @@ export default async function PendenciasPage() {
         .select(
           "id,os_id,autor_id,texto,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,status)",
         )
-        .is("visto_admin_em", null)
         .order("criado_em", { ascending: false }),
     ]);
   const { data: perfil } = await s
@@ -67,14 +66,15 @@ export default async function PendenciasPage() {
       dataCalendarioBahia(o.data_hora_agendada) === hojeBahia,
   );
   const concluir = lista.filter((o) => o.status === "concluido_tecnico");
-  const observacoesAbertas = ((observacoes ?? []) as unknown as Alerta[]).filter(
+  const ultimaMensagemPorOs = new Map<string, Alerta>();
+  for (const observacao of (observacoes ?? []) as unknown as Alerta[]) {
+    if (!ultimaMensagemPorOs.has(observacao.os_id)) ultimaMensagemPorOs.set(observacao.os_id, observacao);
+  }
+  const observacoesAbertas = [...ultimaMensagemPorOs.values()].filter(
     (observacao) =>
       observacao.autor_id !== auth.user?.id &&
       observacao.autor?.papel !== "admin" &&
       !STATUS_ENCERRADOS.includes(observacao.os?.status ?? ""),
-  ).filter(
-    (observacao, indice, lista) =>
-      lista.findIndex((item) => item.os_id === observacao.os_id) === indice,
   );
   const motivos = Object.entries(MOTIVO_LABEL)
     .map(([id, label]) => ({
@@ -136,7 +136,7 @@ export default async function PendenciasPage() {
             {observacoesAbertas.map((o) => (
               <Link
                 key={o.id}
-                href={`/os/${o.os_id}`}
+                href="/dashboard/conferencia"
                 className="rounded-lg border border-orange-200 bg-orange-50/35 p-3 text-xs transition hover:border-orange-400 hover:bg-orange-50"
               >
                 <b className="break-words">

@@ -68,7 +68,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       .select(
         "id,os_id,autor_id,texto,criado_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,status)",
       )
-      .is("visto_admin_em", null)
       .order("criado_em", { ascending: false }),
     getAuthUser(s),
   ]);
@@ -81,14 +80,15 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
 
   if (!isAdminUser(user?.email, perfil?.papel)) redirect("/tecnico");
 
-  const chamados = ((alertas ?? []) as unknown as Alerta[]).filter(
+  const ultimaMensagemPorOs = new Map<string, Alerta>();
+  for (const alerta of (alertas ?? []) as unknown as Alerta[]) {
+    if (!ultimaMensagemPorOs.has(alerta.os_id)) ultimaMensagemPorOs.set(alerta.os_id, alerta);
+  }
+  const chamados = [...ultimaMensagemPorOs.values()].filter(
     (alerta) =>
       alerta.autor_id !== user?.id &&
       alerta.autor?.papel !== "admin" &&
       !STATUS_ENCERRADOS.includes(alerta.os?.status ?? ""),
-  ).filter(
-    (alerta, indice, lista) =>
-      lista.findIndex((item) => item.os_id === alerta.os_id) === indice,
   );
   const amarelo = config?.alerta_amarelo_dias ?? 3;
   const vermelho = config?.alerta_vermelho_dias ?? 7;
@@ -167,7 +167,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       {chamados.length > 0 && (
         <section className="mt-7 rounded-xl border border-amber bg-amber/10 p-4">
           <Link
-            href="/dashboard/pendencias#observacoes"
+            href="/dashboard/conferencia"
             className="flex items-center justify-between gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber"
           >
             <span className="flex min-w-0 items-start gap-2">
@@ -183,7 +183,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {chamados.slice(0, 6).map((alerta) => (
               <Link
-                href={`/os/${alerta.os_id}`}
+                href="/dashboard/conferencia"
                 key={alerta.id}
                 className="min-w-0 rounded-lg border border-amber/40 bg-white p-3 text-xs hover:border-amber"
               >
