@@ -17,7 +17,7 @@ export default async function ConferenciaPage() {
   const { data: { user } } = await getAuthUser(supabase);
   const [{ data: perfil }, { data: observacoes }] = await Promise.all([
     supabase.from("profiles").select("papel").eq("id", user?.id).maybeSingle(),
-    supabase.from("observacoes_os").select("id,os_id,autor_id,texto,criado_em,visto_admin_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,veiculo_modelo,local,status)").order("criado_em", { ascending: false }),
+    supabase.from("observacoes_os").select("id,os_id,autor_id,texto,criado_em,visto_admin_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,veiculo_modelo,local,status,telefone,consultor_nome,tipo,prioridade,tecnico:tecnico_id(nome))").order("criado_em", { ascending: false }),
   ]);
 
   if (!isAdminUser(user?.email, perfil?.papel)) redirect("/tecnico");
