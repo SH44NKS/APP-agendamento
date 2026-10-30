@@ -318,7 +318,7 @@ function Resumo({
     neutro: "border-slate-200 bg-gradient-to-br from-slate-100 to-white text-slate-800",
   };
   const conteudo = (
-    <div className={`relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-[0_10px_30px_rgba(17,24,39,.05)] sm:p-5 ${classes[tema]}`}>
+    <div className={`corbel-summary relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-[0_10px_30px_rgba(17,24,39,.05)] sm:p-5 ${classes[tema]}`}>
       <Icone size={58} strokeWidth={1.5} aria-hidden="true" className="pointer-events-none absolute -right-1 -top-1 opacity-10" />
       <div className="relative z-10 flex items-start justify-between gap-2">
         <p className="break-words text-[11px] font-bold leading-4 sm:text-xs">{label}</p>

@@ -52,45 +52,5 @@ export function ServicoDestaque({
   const visual = SERVICO_VISUAL[tipo];
   const Icone = visual.Icone;
 
-  return (
-    <div
-      className={`relative overflow-hidden border-b px-5 py-4 ${
-        detalhe ? "sm:px-6 sm:py-5" : ""
-      } ${visual.faixa} ${className}`}
-    >
-      <Icone
-        size={detalhe ? 112 : 82}
-        strokeWidth={1.5}
-        aria-hidden="true"
-        className={`pointer-events-none absolute -right-2 -top-3 opacity-[.11] ${visual.marca}`}
-      />
-      <div className="relative z-10 flex items-center gap-3">
-        <span
-          className={`flex shrink-0 items-center justify-center rounded-xl border shadow-sm ${
-            detalhe ? "h-12 w-12" : "h-10 w-10"
-          } ${visual.icone}`}
-        >
-          <Icone
-            size={detalhe ? 25 : 21}
-            strokeWidth={2.2}
-            aria-hidden="true"
-          />
-        </span>
-        <div className="min-w-0">
-          <span
-            className={`block text-[9px] font-bold uppercase tracking-[.18em] opacity-70 ${visual.titulo}`}
-          >
-            Serviço a realizar
-          </span>
-          <strong
-            className={`mt-0.5 block font-black uppercase tracking-[.04em] ${
-              detalhe ? "text-lg sm:text-xl" : "text-base"
-            } ${visual.titulo}`}
-          >
-            {TIPO_LABEL[tipo]}
-          </strong>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className={`corbel-service-heading ${detalhe?'is-detail':''} ${className}`} data-service={tipo}><span className="corbel-service-icon"><Icone size={20} strokeWidth={1.6}/></span><div><small>Tipo de atendimento</small><strong>{TIPO_LABEL[tipo]}</strong></div><Icone className="corbel-service-watermark" size={54} strokeWidth={1}/></div>;
 }

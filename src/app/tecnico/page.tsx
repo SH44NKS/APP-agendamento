@@ -1,3 +1,4 @@
+import {DashboardShell} from "@/components/DashboardShell";
 import Link from "next/link";
 import { CalendarDays, ClipboardList, Flame, LogOut, Search, Siren } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -59,20 +60,9 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
   );
 
   return (
-    <main className="min-h-screen bg-base-bg px-3 py-4 sm:px-4 sm:py-6">
+    <DashboardShell nome={perfil?.nome||"Técnico"} papel="tecnico"><main className="corbel-technician">
       <div className="mx-auto max-w-md">
-        <header className="flex items-center justify-between gap-3 rounded-xl border border-base-border bg-white p-3 shadow-sm">
-          <Link href="/tecnico" className="flex min-w-0 items-center gap-3">
-            <span className="brand-mark">FE</span>
-            <div className="min-w-0">
-              <b className="block truncate text-sm font-extrabold text-gray-900">APP agendamento</b>
-              <p className="font-mono text-[9px] uppercase tracking-[.14em] text-ink-muted">Foco & Escudo</p>
-            </div>
-          </Link>
-          <div className="w-10 shrink-0">
-            <LogoutButton compact icon={<LogOut size={16} />} />
-          </div>
-        </header>
+
 
         <div className="mt-7 flex flex-wrap items-end justify-between gap-3 sm:mt-9">
           <div className="min-w-0">
@@ -175,6 +165,6 @@ export default async function TecnicoPage({ searchParams }: { searchParams: Filt
           <div className="empty-state mt-3">Nenhuma ordem encontrada com esses filtros.</div>
         )}
       </div>
-    </main>
+    </main></DashboardShell>
   );
 }

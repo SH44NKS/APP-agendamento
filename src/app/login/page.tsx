@@ -15,7 +15,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
         : "";
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-base-bg px-4">
+    <main className="corbel-console corbel-login relative flex min-h-screen items-center justify-center overflow-hidden bg-base-bg px-4">
       <div className="absolute inset-x-0 top-0 h-1 bg-amber" />
       <div className="w-full max-w-sm rounded-xl border border-base-border bg-white p-8 shadow-[0_18px_50px_rgba(17,24,39,.08)]">
         <Image

@@ -41,3 +41,38 @@ button,input,select,textarea{font:inherit}
 .icon-box{@apply flex h-9 w-9 items-center justify-center rounded-lg bg-amber/15 text-amber-dark}
 .mobile-nav-scroll{scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .mobile-nav-scroll::-webkit-scrollbar{display:none}
+
+
+/* Original operational console: charcoal navigation, warm accents, calm motion. */
+:root{--app-shadow:0 8px 28px #18223808}
+body{background:#f1f3f5}
+.btn-primary{box-shadow:0 4px 12px #e1b90022;border-radius:11px;transition:transform .18s,box-shadow .18s,background .18s}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 7px 18px #caa80030}
+.btn-secondary{border-radius:11px}
+.campo{border-radius:10px}
+.stat-card,.os-card,.operations-panel,.table-shell,.filter-bar{border-radius:18px;box-shadow:var(--app-shadow)}
+.stat-card,.os-card{transition:transform .22s,box-shadow .22s}
+.stat-card:hover,.os-card:hover{transform:translateY(-2px);box-shadow:0 14px 32px #1822380e}
+.app-sidebar,.console-sidebar{background:#181a1e!important;color:#eef0f4!important;border-color:#2c3036!important}
+.app-sidebar .nav-link,.console-sidebar .nav-link{color:#aeb5c0;border:1px solid transparent;border-radius:11px;transition:background .18s,color .18s,transform .18s;min-height:39px}
+.app-sidebar .nav-link:hover,.console-sidebar .nav-link:hover{background:#272b31;color:#fff;transform:translateX(2px)}
+.app-sidebar .nav-link-active,.console-sidebar .nav-link-active{background:#f4c400!important;border-color:#f4c400!important;color:#181a1e!important;box-shadow:0 4px 18px #0002}
+.app-sidebar .nav-link-active svg,.console-sidebar .nav-link-active svg{color:#181a1e}
+.app-sidebar .nav-heading,.console-nav-heading{font:600 9px ui-monospace,monospace;letter-spacing:.16em;color:#808995;margin:19px 12px 7px}
+.app-sidebar .nav-heading{margin-top:14px}
+.app-sidebar nav{gap:1px;overflow-y:auto;scrollbar-width:thin;padding-right:3px}
+.app-sidebar .sidebar-bottom,.console-sidebar>div:last-child{border-color:#33373e}
+.app-sidebar .profile-card,.console-sidebar [class~="bg-base-surface2"]{background:#252930;border-radius:12px}
+.app-sidebar small,.console-sidebar [class~="text-ink-muted"]{color:#9da7b5}
+.console-sidebar [class~="text-gray-900"]{color:#f0f2f5}.console-sidebar .nav-link-active [class~="text-gray-900"]{color:#181a1e}
+.console-sidebar .brand-mark{background:#f4c400;color:#17191d;border:0;border-radius:14px}
+.console-context{display:flex;align-items:center;justify-content:space-between;margin-bottom:27px;padding-bottom:18px;border-bottom:1px solid #dde2e8}
+.console-context>div>span{font:600 9px ui-monospace,monospace;letter-spacing:.17em;color:#8a5b00}
+.console-context p{font-size:14px;font-weight:700;margin:6px 0 0}
+.console-role{padding:7px 12px;background:#fff;border:1px solid #dce1e7;border-radius:30px;font-size:10px;color:#657084}
+.console-page-content,.workspace-content{animation:console-enter .3s ease-out}
+.console-new-order h1{letter-spacing:-.045em}.console-new-order .max-w-3xl>div.rounded-xl{border-radius:19px;box-shadow:var(--app-shadow)}
+@keyframes console-enter{from{opacity:.45;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:1023px){.console-nav-heading{display:none}.console-nav-item{flex-shrink:0}.console-sidebar .nav-link{min-height:42px}.console-context{margin-bottom:20px}.console-role{font-size:9px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+

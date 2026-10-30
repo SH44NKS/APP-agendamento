@@ -95,10 +95,10 @@ export function PainelDestaque({
   return (
     <section
       id={id}
-      className={`overflow-hidden rounded-2xl border bg-white shadow-[0_10px_30px_rgba(17,24,39,.06)] ${visual.borda} ${className}`}
+      className={`corbel-panel overflow-hidden rounded-2xl border bg-white shadow-[0_10px_30px_rgba(17,24,39,.06)] ${visual.borda} ${className}`}
     >
       <header
-        className={`relative overflow-hidden border-b px-4 py-4 sm:px-5 ${visual.faixa}`}
+        className={`corbel-panel-heading relative overflow-hidden border-b px-4 py-4 sm:px-5 ${visual.faixa}`}
       >
         <Icone
           size={88}

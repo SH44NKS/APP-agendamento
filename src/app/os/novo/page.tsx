@@ -1,4 +1,5 @@
 "use client";
+import {DashboardShell} from "@/components/DashboardShell";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -29,7 +30,7 @@ export default function NovaOSPage() {
     [modoCrm, setModoCrm] = useState<"busca" | "id">("busca"),
     [consultaCrm, setConsultaCrm] = useState(""),
     [buscandoCrm, setBuscandoCrm] = useState(false),
-    [cotacoesCrm, setCotacoesCrm] = useState<{ code: string; name: string; plate: string; chassis: string; model: string; created_at: string }[]>([]),
+    [cotacoesCrm, setCotacoesCrm] = useState<{ code: string; name: string; plate: string; chassis: string; model: string; created_at: string; form_data?: Record<string,string> }[]>([]),
     [resultadoCrmAberto, setResultadoCrmAberto] = useState(false),
     [enviando, setEnviando] = useState(false),
     [criada, setCriada] = useState(false),
@@ -106,7 +107,7 @@ export default function NovaOSPage() {
     setBuscandoCrm(true);
     setErro("");
     try {
-      const response = await fetch("/api/crm/buscar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "details", company: empresaCrm, code: codigo }) });
+      const response = await fetch("/api/crm/buscar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "details", company: empresaCrm, code: codigo, formBase: cotacoesCrm.find(q => q.code === codigo)?.form_data }) });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Não foi possível carregar a cotação.");
       const dados = body.data;
@@ -216,7 +217,7 @@ export default function NovaOSPage() {
     setCriada(true);
   }
   if (criada) return (
-    <main className="min-h-screen bg-base-bg px-4 py-8"><div className="mx-auto max-w-xl rounded-xl border border-base-border bg-white p-6 text-center shadow-[0_10px_30px_rgba(17,24,39,.06)]">
+    <DashboardShell nome="Administração" papel="admin"><main className="console-new-order"><div className="mx-auto max-w-xl rounded-xl border border-base-border bg-white p-6 text-center shadow-[0_10px_30px_rgba(17,24,39,.06)]">
       <CheckCircle2 size={38} className="mx-auto text-emerald-600" />
       <h1 className="mt-3 text-xl font-bold">Lançamento criado com sucesso</h1>
       <p className="mt-2 text-sm text-ink-muted">A ordem foi registrada e atribuída ao técnico selecionado.</p>
@@ -234,10 +235,10 @@ export default function NovaOSPage() {
       </div>}
       <button type="button" onClick={()=>setCriada(false)} className="btn-primary mt-6 w-full">Fazer novo lançamento</button>
       <button type="button" onClick={()=>router.back()} className="mt-4 text-xs text-ink-muted hover:text-ink">Voltar</button>
-    </div></main>
+    </div></main></DashboardShell>
   );
   return (
-    <main className="min-h-screen bg-base-bg px-4 py-8">
+    <DashboardShell nome="Administração" papel="admin"><main className="console-new-order">
       <div className="mx-auto max-w-3xl">
         <button
           onClick={() => router.back()}
@@ -252,7 +253,7 @@ export default function NovaOSPage() {
             <Search size={20} className="mt-0.5 text-amber-dark" />
             <div>
               <h2 className="text-sm font-bold">Buscar dados no CRM</h2>
-              <p className="mt-1 text-xs text-ink-muted">Pesquise a cotação pelo nome, placa, CPF/CNPJ, chassi ou ID. Os dados só preenchem o formulário depois da sua escolha.</p>
+              <p className="mt-1 text-xs text-ink-muted">Pesquise a cotação pelo nome, placa, CPF/CNPJ, chassi ou ID. Busca a cotação mais recente dos últimos 45 dias. Confira os dados antes de criar a OS.</p>
             </div>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-4">
@@ -421,7 +422,7 @@ export default function NovaOSPage() {
           <div className="mt-4 grid gap-3">{cotacoesCrm.map((cotacao) => <div key={cotacao.code} className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950"><p className="font-bold">{cotacao.name || "Cliente não informado"}</p><p className="mt-1 text-xs">Cotação {cotacao.code} · {cotacao.plate || cotacao.chassis || "sem placa/chassi"}{cotacao.model ? ` · ${cotacao.model}` : ""}{cotacao.created_at ? ` · ${cotacao.created_at.slice(0, 10).split("-").reverse().join("/")}` : ""}</p><button type="button" onClick={() => usarCotacaoCrm(cotacao.code)} disabled={buscandoCrm} className="btn-secondary mt-3 border-emerald-300 bg-white">Usar dados desta cotação</button></div>)}</div>
         </section>
       </div>}
-    </main>
+    </main></DashboardShell>
   );
 }
 function Resumo({ label, valor }: { label: string; valor: string }) {

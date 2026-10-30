@@ -1,3 +1,5 @@
+import "@fontsource-variable/dm-sans";
+import "./console.css";
 import type {Metadata} from "next";import {Inter,Roboto_Mono} from "next/font/google";import {InstallAppGuide} from "@/components/InstallAppGuide";import "./globals.css";import "./brand.css";
 const inter=Inter({subsets:["latin"],variable:"--font-inter",display:"swap"});const mono=Roboto_Mono({subsets:["latin"],variable:"--font-mono",display:"swap"});
 export const metadata:Metadata={title:"APP agendamento | Foco & Escudo",description:"Sistema interno para controle operacional de instalações, retiradas e manutenções.",icons:{icon:"/app-icon.png",apple:"/app-icon.png"},manifest:"/manifest.webmanifest",verification:{google:"_Z2Ed8XfOtqqPK_iiOz1aXk4Dvr-dH8jOu3Hpuxuz04"}};

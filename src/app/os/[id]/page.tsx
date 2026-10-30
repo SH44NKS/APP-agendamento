@@ -1,3 +1,4 @@
+import {DashboardShell} from "@/components/DashboardShell";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminOSEditor } from "@/components/AdminOSEditor";
@@ -67,7 +68,7 @@ export default async function OSDetalhePage({
       (config?.alerta_vermelho_dias ?? 7);
 
   return (
-    <main className="min-h-screen bg-base-bg px-4 py-8">
+    <DashboardShell nome={perfil?.nome||"Equipe"} papel={isAdmin?"admin":"tecnico"}><main className="corbel-order-detail">
       <div className="mx-auto max-w-4xl">
         <Link
           href={isAdmin ? "/dashboard" : "/tecnico"}
@@ -189,7 +190,7 @@ export default async function OSDetalhePage({
           </aside>
         </div>
       </div>
-    </main>
+    </main></DashboardShell>
   );
 }
 
