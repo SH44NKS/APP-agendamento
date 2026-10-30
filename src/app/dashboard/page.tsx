@@ -32,6 +32,7 @@ type Alerta = {
   os_id: string;
   autor_id: string;
   texto: string;
+  visto_admin_em: string | null;
   autor?: { nome?: string; papel?: string } | null;
   os?: {
     cliente_nome?: string;
@@ -66,7 +67,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
     s
       .from("observacoes_os")
       .select(
-        "id,os_id,autor_id,texto,criado_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,status)",
+        "id,os_id,autor_id,texto,criado_em,visto_admin_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,status)",
       )
       .order("criado_em", { ascending: false }),
     getAuthUser(s),
@@ -88,6 +89,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
     (alerta) =>
       alerta.autor_id !== user?.id &&
       alerta.autor?.papel !== "admin" &&
+      !alerta.visto_admin_em &&
       !STATUS_ENCERRADOS.includes(alerta.os?.status ?? ""),
   );
   const amarelo = config?.alerta_amarelo_dias ?? 3;
@@ -207,6 +209,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
         <Resumo Icone={Flame} tema="laranja" label="Críticas" valor={criticas.length} detalhe={`sem movimento por mais de ${vermelho} dias`} href={hrefResumo("criticas")} />
       </section>
 
+      <section id="lista-ordens" className="mt-5">
+        <BuscaOrdens
+          busca={searchParams.busca}
+          status={statusSelecionado}
+          tipo={tipoSelecionado}
+          prioridade={searchParams.prioridade}
+          tecnico={searchParams.tecnico}
+          tecnicos={tecnicos ?? []}
+        />
+      </section>
+
       {altasFiltradas.length > 0 && (
         <BlocoPrioridade
           lista={altasFiltradas}
@@ -216,7 +229,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
       )}
 
       <PainelDestaque
-        id="lista-ordens"
         Icone={ClipboardList}
         titulo="Ordens de serviço"
         descricao={
@@ -233,15 +245,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Fi
             Exportar CSV
           </a>
         </div>
-
-        <BuscaOrdens
-          busca={searchParams.busca}
-          status={statusSelecionado}
-          tipo={tipoSelecionado}
-          prioridade={searchParams.prioridade}
-          tecnico={searchParams.tecnico}
-          tecnicos={tecnicos ?? []}
-        />
 
         <div className="card-grid mt-5">
           {ordensRegulares.map((ordem) => (
