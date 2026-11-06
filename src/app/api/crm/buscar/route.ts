@@ -106,6 +106,44 @@ async function crmRead(companyName: Company, path: string, body?: Record<string,
   return data;
 }
 
+/**
+ * Alguns atendentes copiam o código da negociação em vez do código da
+ * cotação. O Power CRM mantém os dois formatos separados, então tentamos a
+ * cotação primeiro e, se ela não puder ser lida, procuramos a cotação mais
+ * recente vinculada à negociação informada.
+ */
+async function quoteFromId(companyName: Company, id: string) {
+  let quoteError: unknown;
+  try {
+    return {
+      code: id,
+      quote: object(await crmRead(companyName, `quotation/${encodeURIComponent(id)}`)),
+      negotiation: {} as Raw,
+    };
+  } catch (error) {
+    quoteError = error;
+  }
+
+  try {
+    const negotiation = object(await crmRead(companyName, `negotiation/${encodeURIComponent(id)}`));
+    const quotations = Array.isArray(negotiation.quotations)
+      ? negotiation.quotations.map(object)
+      : [];
+    const quotation = quotations.find((item) => code(field(item, "code", "quotationCode", "id")));
+    const quotationCode = quotation && field(quotation, "code", "quotationCode", "id");
+    if (!quotationCode || !code(quotationCode)) {
+      throw new Error("Esta negociação não possui uma cotação vinculada.");
+    }
+    return {
+      code: quotationCode,
+      quote: object(await crmRead(companyName, `quotation/${encodeURIComponent(quotationCode)}`)),
+      negotiation,
+    };
+  } catch {
+    throw quoteError;
+  }
+}
+
 async function searchLatest(companyName: Company, query: string) {
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   let calls = 0;
@@ -171,9 +209,9 @@ export async function POST(request: Request) {
     if (query.length < 3 || query.length > 100) throw new Error("Digite pelo menos 3 letras ou números.");
     if (input.mode === "id") {
       if (!code(text(input.query))) throw new Error("Informe um ID de cotação válido.");
-      const details = await crmRead(input.company, `quotation/${encodeURIComponent(text(input.query))}`);
-      const form = formFromQuote(details);
-      return NextResponse.json({ quotes: [{ code: text(input.query), name: form.cliente_nome, plate: form.veiculo_identificador, chassis: "", model: form.veiculo_modelo, created_at: "" }] }, { headers });
+      const found = await quoteFromId(input.company, text(input.query));
+      const form = formFromQuote(found.quote, found.negotiation);
+      return NextResponse.json({ quotes: [{ code: found.code, name: form.cliente_nome, plate: form.veiculo_identificador, chassis: "", model: form.veiculo_modelo, created_at: "" }] }, { headers });
     }
     const quotes = await searchLatest(input.company, query);
     return NextResponse.json({ quotes, message: quotes.length ? "Cotação mais recente encontrada no CRM." : "Nenhuma cotação encontrada nos últimos 45 dias. Tente outra empresa ou use o ID da cotação." }, { headers });
