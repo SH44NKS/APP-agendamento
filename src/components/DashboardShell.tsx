@@ -5,7 +5,7 @@ import {useEffect,useState} from 'react';
 import {LayoutDashboard,CalendarDays,UsersRound,Search,Sun,Moon,ClipboardPlus,ShieldCheck} from 'lucide-react';
 import {LogoutButton} from './LogoutButton';
 const groups=[
- {label:'Visão geral',href:'/dashboard',routes:[['/dashboard','Dashboard'],['/dashboard/tecnicos','Por técnico']]},
+ {label:'Visão geral',href:'/dashboard',routes:[['/dashboard','Dashboard'],['/dashboard/tecnicos','Técnicos']]},
  {label:'Operação',href:'/dashboard/agenda',routes:[['/dashboard/agenda','Agenda'],['/dashboard/pendencias','Pendências'],['/dashboard/criticos','OS críticas']]},
  {label:'Conferência',href:'/dashboard/conferencia',admin:true,routes:[['/dashboard/conferencia','Observações'],['/dashboard/finalizacao','Finalização']]},
  {label:'Equipe',href:'/dashboard/equipe',admin:true,routes:[['/dashboard/equipe','Gestão de técnicos']]},

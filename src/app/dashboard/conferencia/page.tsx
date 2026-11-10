@@ -3,6 +3,7 @@ import { BadgeCheck } from "lucide-react";
 import { ConferenciaObservacoes, type ObservacaoConferencia } from "@/components/ConferenciaObservacoes";
 import { isAdminUser } from "@/lib/auth";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
+import type { OrdemServico } from "@/lib/os";
 
 const STATUS_ENCERRADOS = ["finalizado", "concluido", "cancelado"];
 
@@ -15,9 +16,10 @@ type ObservacaoBanco = ObservacaoConferencia & {
 export default async function ConferenciaPage() {
   const supabase = createClient();
   const { data: { user } } = await getAuthUser(supabase);
-  const [{ data: perfil }, { data: observacoes }] = await Promise.all([
+  const [{ data: perfil }, { data: observacoes }, { data: tecnicos }] = await Promise.all([
     supabase.from("profiles").select("papel").eq("id", user?.id).maybeSingle(),
-    supabase.from("observacoes_os").select("id,os_id,autor_id,texto,criado_em,visto_admin_em,autor:autor_id(nome,papel),os:os_id(cliente_nome,veiculo_identificador,veiculo_modelo,local,status,telefone,consultor_nome,tipo,prioridade,tecnico:tecnico_id(nome))").order("criado_em", { ascending: false }),
+    supabase.from("observacoes_os").select("id,os_id,autor_id,texto,criado_em,visto_admin_em,autor:autor_id(nome,papel),os:os_id(*,tecnico:tecnico_id(nome),observacoes_os(criado_em))").order("criado_em", { ascending: false }),
+    supabase.from("profiles").select("id,nome").eq("papel", "tecnico").eq("ativo", true).order("nome"),
   ]);
 
   if (!isAdminUser(user?.email, perfil?.papel)) redirect("/tecnico");
@@ -33,5 +35,5 @@ export default async function ConferenciaPage() {
     !STATUS_ENCERRADOS.includes(observacao.os?.status ?? ""),
   );
 
-  return <div><p className="eyebrow">CENTRAL OPERACIONAL</p><div className="mt-2 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-3xl font-bold">Conferência de observações</h1><p className="mt-2 text-sm text-ink-muted">Responda ou marque como lida sem abrir a ordem de serviço.</p></div><span className="flex items-center gap-2 rounded-lg border border-amber bg-amber/10 px-3 py-2 text-sm font-bold text-amber-dark"><BadgeCheck size={17}/>{pendentes.length} pendente{pendentes.length === 1 ? "" : "s"}</span></div><section className="mt-7"><ConferenciaObservacoes observacoes={pendentes} /></section></div>;
+  return <div><p className="eyebrow">CENTRAL OPERACIONAL</p><div className="mt-2 flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-3xl font-bold">Conferência de observações</h1><p className="mt-2 text-sm text-ink-muted">Responda, marque como lida ou edite a OS sem sair desta tela.</p></div><span className="flex items-center gap-2 rounded-lg border border-amber bg-amber/10 px-3 py-2 text-sm font-bold text-amber-dark"><BadgeCheck size={17}/>{pendentes.length} pendente{pendentes.length === 1 ? "" : "s"}</span></div><section className="mt-7"><ConferenciaObservacoes observacoes={pendentes} tecnicos={tecnicos ?? []} /></section></div>;
 }
