@@ -3,7 +3,7 @@ import { createHmac } from "node:crypto";
 import { isAdminUser } from "@/lib/auth";
 import { createClient, getAuthUser } from "@/lib/supabase/server";
 
-import { crmReportPage, crmForm } from "@/lib/crm-data";
+import { crmReportPage, crmForm, crmUf } from "@/lib/crm-data";
 import { crmWindows, crmNewest } from "@/lib/crm-recent";
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -42,21 +42,26 @@ function fieldFrom(records: Raw[], ...keys: string[]) {
 function formFromQuote(value: unknown, negotiation?: unknown) {
   const quote = object(value);
   const negotiationData = object(negotiation);
-  const client = { ...object(negotiationData.client), ...object(quote.client) };
+  const quoteClient = object(quote.client);
+  const negotiationClient = object(negotiationData.client);
+  const client = { ...negotiationClient, ...quoteClient };
   const addressRecords = [
-    client,
+    quoteClient,
+    object(quoteClient.address),
     quote,
-    negotiationData,
-    object(client.address),
     object(quote.address),
+    negotiationClient,
+    object(negotiationClient.address),
+    negotiationData,
     object(negotiationData.address),
   ];
-  const street = fieldFrom(addressRecords, "addressStreet", "addressAddress", "address", "street", "logradouro");
-  const number = fieldFrom(addressRecords, "addressNumber", "number", "numero");
-  const complement = fieldFrom(addressRecords, "addressComplement", "complement", "complemento");
-  const neighborhood = fieldFrom(addressRecords, "addressNeighborhood", "addressDistrict", "neighborhood", "district", "bairro");
-  const city = fieldFrom(addressRecords, "cityName", "city", "municipality", "cidade");
-  const state = fieldFrom(addressRecords, "stateAbbreviation", "state", "uf", "estado");
+  const street = fieldFrom(addressRecords, "addressStreet", "addressAddress", "clientAddress", "address", "street", "logradouro", "rua");
+  const number = fieldFrom(addressRecords, "addressNumber", "clientAddressNumber", "number", "numero");
+  const complement = fieldFrom(addressRecords, "addressComplement", "clientAddressComplement", "complement", "complemento");
+  const neighborhood = fieldFrom(addressRecords, "addressNeighborhood", "addressNeightborhood", "clientAddressNeighborhood", "clientAddressNeightborhood", "addressDistrict", "neighborhood", "district", "bairro");
+  const city = fieldFrom(addressRecords, "cityName", "addressCity", "clientCity", "city", "municipality", "cidade")
+    || fieldFrom(addressRecords.map(record => object(record.city)), "name", "nome");
+  const state = crmUf(fieldFrom(addressRecords, "stateAbbreviation", "clientState", "addressState", "state", "uf", "estado"));
   return {
     cliente_nome: field(client, "fullName", "name") || field(quote, "name", "clientName"),
     veiculo_modelo: field(quote, "carModel", "model"),
@@ -192,10 +197,16 @@ export async function POST(request: Request) {
     if (input.action === "details") {
       if (!code(input.code)) throw new Error("Código da cotação inválido.");
       const quote = object(await crmRead(input.company, `quotation/${encodeURIComponent(text(input.code))}`));
-      const relatedNegotiation = negotiationCode(quote);
+      const relatedNegotiation = negotiationCode(quote) || text(input.negotiationCode);
       let negotiation: Raw = {};
       if (code(relatedNegotiation)) {
-        try { negotiation = object(await crmRead(input.company, `negotiation/${encodeURIComponent(relatedNegotiation)}`)); } catch { /* A cotação continua utilizável mesmo sem os dados complementares. */ }
+        try {
+          const related = object(await crmRead(input.company, `negotiation/${encodeURIComponent(relatedNegotiation)}`));
+          const matchesQuote = Array.isArray(related.quotations) && related.quotations.some(
+            item => field(object(item), "code", "quotationCode", "id") === text(input.code),
+          );
+          if (negotiationCode(quote) || matchesQuote) negotiation = related;
+        } catch { /* A cotação continua utilizável mesmo sem os dados complementares. */ }
       }
       const fresh = formFromQuote(quote, negotiation);
       const base = object(input.formBase);
@@ -211,7 +222,7 @@ export async function POST(request: Request) {
       if (!code(text(input.query))) throw new Error("Informe um ID de cotação válido.");
       const found = await quoteFromId(input.company, text(input.query));
       const form = formFromQuote(found.quote, found.negotiation);
-      return NextResponse.json({ quotes: [{ code: found.code, name: form.cliente_nome, plate: form.veiculo_identificador, chassis: "", model: form.veiculo_modelo, created_at: "" }] }, { headers });
+      return NextResponse.json({ quotes: [{ code: found.code, negotiation_code: found.code !== text(input.query) ? text(input.query) : negotiationCode(found.quote), name: form.cliente_nome, plate: form.veiculo_identificador, chassis: "", model: form.veiculo_modelo, created_at: "" }] }, { headers });
     }
     const quotes = await searchLatest(input.company, query);
     return NextResponse.json({ quotes, message: quotes.length ? "Cotação mais recente encontrada no CRM." : "Nenhuma cotação encontrada nos últimos 45 dias. Tente outra empresa ou use o ID da cotação." }, { headers });

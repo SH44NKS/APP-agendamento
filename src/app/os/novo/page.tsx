@@ -30,7 +30,7 @@ export default function NovaOSPage() {
     [modoCrm, setModoCrm] = useState<"busca" | "id">("busca"),
     [consultaCrm, setConsultaCrm] = useState(""),
     [buscandoCrm, setBuscandoCrm] = useState(false),
-    [cotacoesCrm, setCotacoesCrm] = useState<{ code: string; name: string; plate: string; chassis: string; model: string; created_at: string; form_data?: Record<string,string> }[]>([]),
+    [cotacoesCrm, setCotacoesCrm] = useState<{ code: string; name: string; plate: string; chassis: string; model: string; created_at: string; negotiation_code?: string; form_data?: Record<string,string> }[]>([]),
     [resultadoCrmAberto, setResultadoCrmAberto] = useState(false),
     [enviando, setEnviando] = useState(false),
     [criada, setCriada] = useState(false),
@@ -107,7 +107,18 @@ export default function NovaOSPage() {
     setBuscandoCrm(true);
     setErro("");
     try {
-      const response = await fetch("/api/crm/buscar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "details", company: empresaCrm, code: codigo, formBase: cotacoesCrm.find(q => q.code === codigo)?.form_data }) });
+      const cotacao = cotacoesCrm.find(q => q.code === codigo);
+      const response = await fetch("/api/crm/buscar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "details",
+          company: empresaCrm,
+          code: codigo,
+          negotiationCode: cotacao?.negotiation_code,
+          formBase: cotacao?.form_data,
+        }),
+      });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Não foi possível carregar a cotação.");
       const dados = body.data;
